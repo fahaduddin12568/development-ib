@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>DBS iBanking — Admin Panel</title>
+	<link rel="shortcut icon" href="images/dbs_logo_min1.png">
+	<style>
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+
+	body {
+		font-family: 'Frutiger', 'Helvetica Neue', Arial, sans-serif;
+		background: #f0f0f0; color: #333; font-size: 14px;
+	}
+
+	/* ======== LOGIN ======== */
+	#loginScreen {
+		min-height: 100vh; background: #1a1a1a;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.login-box {
+		background: #fff; width: 360px;
+		padding: 36px 32px 28px;
+		border-top: 4px solid #c50000;
+		box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+	}
+	.login-box h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+	.login-box p  { font-size: 13px; color: #888; margin-bottom: 28px; }
+	.login-field  { margin-bottom: 18px; }
+	.login-field label {
+		display: block; font-size: 12px; font-weight: 600; color: #666;
+		margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+	}
+	.login-field input {
+		width: 100%; padding: 10px 14px; font-size: 14px;
+		border: 1px solid #ddd; border-radius: 3px; font-family: inherit;
+		transition: border-color 0.15s;
+	}
+	.login-field input:focus { outline: none; border-color: #c50000; }
+	.login-error { color: #c50000; font-size: 13px; margin-bottom: 12px; display: none; }
+	.btn-admin-login {
+		width: 100%; background: #c50000; color: #fff; border: none;
+		padding: 12px; border-radius: 3px; font-size: 14px; font-weight: 600;
+		cursor: pointer; font-family: inherit; transition: background 0.15s;
+	}
+	.btn-admin-login:hover { background: #a50000; }
+
+	/* ======== APP SHELL ======== */
+	#adminApp { display: none; min-height: 100vh; flex-direction: column; }
+
+	.admin-header {
+		background: #1a1a1a; height: 56px;
+		display: flex; align-items: center; padding: 0 24px; gap: 16px;
+		position: sticky; top: 0; z-index: 100;
+	}
+	.admin-header-title { color: #fff; font-size: 15px; font-weight: 700; }
+	.admin-header-sub   { color: #666; font-size: 12px; margin-left: 6px; }
+	.admin-header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+	.admin-env-badge {
+		background: #c50000; color: #fff; padding: 3px 10px;
+		border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+	}
+	.admin-logout-btn {
+		background: transparent; border: 1px solid #555; color: #ccc;
+		padding: 5px 14px; border-radius: 3px; font-size: 12px;
+		cursor: pointer; font-family: inherit;
+	}
+	.admin-logout-btn:hover { border-color: #c50000; color: #fff; }
+
+	.admin-body { display: flex; flex: 1; min-height: calc(100vh - 56px); }
+
+	/* ======== SIDEBAR ======== */
+	.admin-sidebar { width: 220px; background: #222; flex-shrink: 0; padding-top: 16px; }
+	.admin-nav-section {
+		font-size: 10px; font-weight: 700; color: #555;
+		text-transform: uppercase; letter-spacing: 0.8px;
+		padding: 14px 20px 6px;
+	}
+	.admin-nav-item {
+		display: block; padding: 10px 20px;
+		color: #aaa; font-size: 13px; text-decoration: none;
+		cursor: pointer; transition: background 0.12s, color 0.12s;
+		border-left: 3px solid transparent;
+		user-select: none;
+	}
+	.admin-nav-item:hover { background: #2a2a2a; color: #fff; }
+	.admin-nav-item.active { background: #2a2a2a; color: #fff; border-left-color: #c50000; font-weight: 600; }
+	.admin-nav-icon { margin-right: 8px; }
+
+	/* ======== CONTENT ======== */
+	.admin-content { flex: 1; padding: 28px; overflow-y: auto; }
+	.admin-page { display: none; }
+	.admin-page.active { display: block; }
+
+	.page-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+	.page-sub   { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+	/* ======== STAT CARDS ======== */
+	.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+	.stat-card {
+		background: #fff; padding: 18px 20px; border-radius: 3px;
+		box-shadow: 0 1px 4px rgba(0,0,0,0.09); border-left: 4px solid #c50000;
+	}
+	.stat-card.green  { border-left-color: #00a651; }
+	.stat-card.blue   { border-left-color: #1f6cff; }
+	.stat-card.orange { border-left-color: #ff7a00; }
+	.stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+	.stat-value { font-size: 26px; font-weight: 700; color: #1a1a1a; }
+	.stat-sub   { font-size: 11px; color: #888; margin-top: 4px; }
+
+	/* ======== PANELS ======== */
+	.panel { background: #fff; border-radius: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.09); overflow: hidden; margin-bottom: 20px; }
+	.panel-header { padding: 14px 20px; border-bottom: 2px solid #c50000; display: flex; align-items: center; justify-content: space-between; }
+	.panel-header h2 { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+	.panel-body { padding: 20px; }
+
+	/* ======== USER SELECTOR BAR ======== */
+	.user-selector-bar {
+		background: #fff; border: 1px solid #e0e0e0; border-radius: 3px;
+		padding: 12px 16px; margin-bottom: 20px;
+		display: flex; align-items: center; gap: 12px;
+		box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+	}
+	.user-selector-bar label { font-size: 12px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+	.user-selector-bar select {
+		flex: 1; max-width: 340px; padding: 7px 12px; font-size: 13px;
+		border: 1px solid #ddd; border-radius: 3px; font-family: inherit;
+		transition: border-color 0.15s;
+	}
+	.user-selector-bar select:focus { outline: none; border-color: #c50000; }
+	.user-chip {
+		background: #f0f0f0; border-radius: 20px; padding: 4px 12px;
+		font-size: 12px; font-weight: 600; color: #444;
+	}
+
+	/* ======== TABLES ======== */
+	.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+	.admin-table th {
+		background: #f7f7f7; padding: 9px 14px;
+		font-size: 11px; font-weight: 700; color: #666;
+		text-transform: uppercase; letter-spacing: 0.3px;
+		text-align: left; border-bottom: 1px solid #eee;
+	}
+	.admin-table td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+	.admin-table tr:last-child td { border-bottom: none; }
+	.admin-table tr:hover td { background: #fafafa; }
+	.text-right { text-align: right; }
+	.td-bold  { font-weight: 600; }
+	.td-muted { color: #888; font-size: 12px; }
+
+	/* ======== BADGES ======== */
+	.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+	.badge-pending   { background: #fff3cd; color: #856404; }
+	.badge-completed { background: #d4edda; color: #155724; }
+	.badge-failed    { background: #f8d7da; color: #721c24; }
+
+	/* ======== BUTTONS ======== */
+	.btn {
+		padding: 7px 14px; border-radius: 3px; font-size: 12px;
+		font-weight: 600; cursor: pointer; font-family: inherit;
+		border: none; transition: background 0.12s;
+	}
+	.btn-red     { background: #c50000; color: #fff; }
+	.btn-red:hover { background: #a50000; }
+	.btn-green   { background: #00a651; color: #fff; }
+	.btn-green:hover { background: #008040; }
+	.btn-gray    { background: #eee; color: #444; }
+	.btn-gray:hover { background: #ddd; }
+	.btn-outline { background: #fff; color: #c50000; border: 1px solid #c50000; }
+	.btn-outline:hover { background: #fff5f5; }
+	.btn-danger  { background: #fff; color: #c50000; border: 1px solid #eee; }
+	.btn-danger:hover { background: #ffe8e8; border-color: #c50000; }
+	.btn-sm { padding: 4px 10px; font-size: 11px; }
+	.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+	/* ======== FORMS ======== */
+	.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+	.form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+	.form-full { grid-column: 1 / -1; }
+	.field label {
+		display: block; font-size: 11px; font-weight: 700; color: #666;
+		text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 5px;
+	}
+	.field input, .field select, .field textarea {
+		width: 100%; padding: 8px 12px; font-size: 13px;
+		border: 1px solid #ddd; border-radius: 3px;
+		font-family: inherit; transition: border-color 0.15s;
+	}
+	.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #c50000; }
+	.field textarea { resize: vertical; min-height: 80px; }
+	.form-actions { margin-top: 18px; display: flex; gap: 10px; }
+
+	/* ======== TOAST ======== */
+	.admin-toast {
+		position: fixed; top: 20px; right: 24px;
+		background: #1a1a1a; color: #fff;
+		padding: 12px 20px; border-radius: 3px; font-size: 13px; font-weight: 500;
+		box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+		opacity: 0; pointer-events: none; transition: opacity 0.2s;
+		z-index: 9999; border-left: 4px solid #00a651;
+	}
+	.admin-toast.show { opacity: 1; }
+	.admin-toast.err  { border-left-color: #c50000; }
+
+	/* ======== MODAL ======== */
+	.modal-overlay {
+		position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+		display: none; align-items: center; justify-content: center; z-index: 1000;
+	}
+	.modal-overlay.open { display: flex; }
+	.modal {
+		background: #fff; border-radius: 3px; width: 520px; max-height: 90vh;
+		overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+	}
+	.modal-header { padding: 16px 20px; border-bottom: 2px solid #c50000; display: flex; align-items: center; justify-content: space-between; }
+	.modal-header h3 { font-size: 15px; font-weight: 700; }
+	.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; line-height: 1; }
+	.modal-close:hover { color: #333; }
+	.modal-body   { padding: 20px; }
+	.modal-footer { padding: 16px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+
+	.empty-state { padding: 32px; text-align: center; color: #aaa; font-style: italic; }
+
+	/* Delete confirm inline */
+	.del-confirm { display: none; align-items: center; gap: 8px; }
+	.del-confirm.show { display: flex; }
+	</style>
+</head>
+<body>
+
+<!-- ======================== LOGIN ======================== -->
+<div id="loginScreen">
+	<div class="login-box">
+		<h1>Admin Panel</h1>
+		<p>DBS iBanking — Internal Management</p>
+		<div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
+		<div class="login-field">
+			<label>Admin ID</label>
+			<input type="text" id="adminId" placeholder="Admin ID" autocomplete="off" />
+		</div>
+		<div class="login-field">
+			<label>Password</label>
+			<input type="password" id="adminPass" placeholder="Password" />
+		</div>
+		<button class="btn-admin-login" onclick="adminLogin()">Sign In</button>
+	</div>
+</div>
+
+<!-- ======================== APP ======================== -->
+<div id="adminApp">
+
+	<div class="admin-header">
+		<span class="admin-header-title">DBS iBanking</span>
+		<span class="admin-header-sub">Admin Panel</span>
+		<div class="admin-header-right">
+			<span class="admin-env-badge">Admin</span>
+			<button class="admin-logout-btn" onclick="adminLogout()">Sign Out</button>
+		</div>
+	</div>
+
+	<div class="admin-body">
+
+		<!-- Sidebar -->
+		<nav class="admin-sidebar">
+			<div class="admin-nav-section">Overview</div>
+			<a class="admin-nav-item active" onclick="showPage('dashboard')"><span class="admin-nav-icon">▪</span>Dashboard</a>
+
+			<div class="admin-nav-section">Users</div>
+			<a class="admin-nav-item" onclick="showPage('users')"><span class="admin-nav-icon">👤</span>Manage Users</a>
+			<a class="admin-nav-item" onclick="showPage('addUser')"><span class="admin-nav-icon">＋</span>Add User</a>
+
+			<div class="admin-nav-section">Transfers</div>
+			<a class="admin-nav-item" onclick="showPage('transfers')"><span class="admin-nav-icon">⇌</span>Transfer History</a>
+			<a class="admin-nav-item" onclick="showPage('addTransfer')"><span class="admin-nav-icon">＋</span>Add Transfer</a>
+
+			<div class="admin-nav-section">Notifications</div>
+			<a class="admin-nav-item" onclick="showPage('notifications')"><span class="admin-nav-icon">🔔</span>Send Notification</a>
+		</nav>
+
+		<!-- Main content -->
+		<main class="admin-content">
+
+			<!-- =========== DASHBOARD =========== -->
+			<div class="admin-page active" id="page-dashboard">
+				<div class="page-title">Dashboard</div>
+				<div class="page-sub">System overview</div>
+
+				<div class="stats-row">
+					<div class="stat-card">
+						<div class="stat-label">Total Users</div>
+						<div class="stat-value" id="stat-users">0</div>
+						<div class="stat-sub">Active accounts</div>
+					</div>
+					<div class="stat-card green">
+						<div class="stat-label">Total Transfers</div>
+						<div class="stat-value" id="stat-txcount">0</div>
+						<div class="stat-sub">All users</div>
+					</div>
+					<div class="stat-card blue">
+						<div class="stat-label">Pending Transfers</div>
+						<div class="stat-value" id="stat-pending">0</div>
+						<div class="stat-sub">Awaiting processing</div>
+					</div>
+					<div class="stat-card orange">
+						<div class="stat-label">Unread Notifications</div>
+						<div class="stat-value" id="stat-notifs">0</div>
+						<div class="stat-sub">Across all users</div>
+					</div>
+				</div>
+
+				<div class="panel">
+					<div class="panel-header">
+						<h2>Recent Transfers (All Users)</h2>
+						<button class="btn btn-gray btn-sm" onclick="showPage('transfers')">View All</button>
+					</div>
+					<div class="panel-body" style="padding:0;">
+						<table class="admin-table">
+							<thead><tr><th>Date</th><th>User</th><th>Account</th><th>Currency</th><th class="text-right">Amount</th><th class="text-right">Status</th></tr></thead>
+							<tbody id="dash-tx-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- =========== MANAGE USERS =========== -->
+			<div class="admin-page" id="page-users">
+				<div class="page-title">Manage Users</div>
+				<div class="page-sub">View, edit and delete client accounts</div>
+
+				<div class="panel">
+					<div class="panel-header">
+						<h2>All Users</h2>
+						<button class="btn btn-red btn-sm" onclick="showPage('addUser')">+ Add User</button>
+					</div>
+					<div class="panel-body" style="padding:0;">
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>User ID</th>
+									<th>Account / Company</th>
+									<th>Currency</th>
+									<th class="text-right">Balance</th>
+									<th class="text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody id="users-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- =========== ADD USER =========== -->
+			<div class="admin-page" id="page-addUser">
+				<div class="page-title">Add User</div>
+				<div class="page-sub">Create a new client account</div>
+
+				<div class="panel">
+					<div class="panel-header"><h2>New User</h2></div>
+					<div class="panel-body">
+						<div class="form-grid">
+							<div class="field"><label>Full Name</label><input type="text" id="au-name" placeholder="e.g. John Smith" /></div>
+							<div class="field"><label>User ID (Login)</label><input type="text" id="au-id" placeholder="Unique numeric ID" /></div>
+							<div class="field"><label>PIN (Login)</label><input type="text" id="au-pin" placeholder="6–8 digits" /></div>
+							<div class="field"><label>Account / Company Name</label><input type="text" id="au-account" placeholder="e.g. Acme Corp Ltd" /></div>
+							<div class="field"><label>Currency</label>
+								<select id="au-currency">
+									<option value="EUR">EUR</option>
+									<option value="USD">USD</option>
+									<option value="SGD">SGD</option>
+									<option value="GBP">GBP</option>
+								</select>
+							</div>
+							<div class="field"><label>Balance</label><input type="number" id="au-balance" placeholder="0.00" step="0.01" min="0" /></div>
+						</div>
+						<div class="form-actions">
+							<button class="btn btn-red" onclick="adminAddUser()">Create User</button>
+							<button class="btn btn-gray" onclick="clearAddUser()">Clear</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- =========== TRANSFERS =========== -->
+			<div class="admin-page" id="page-transfers">
+				<div class="page-title">Transfer History</div>
+				<div class="page-sub">View and manage transfers for any user</div>
+
+				<!-- User selector -->
+				<div class="user-selector-bar">
+					<label>Viewing user:</label>
+					<select id="tx-user-select" onchange="renderTransfers()"></select>
+				</div>
+
+				<div class="panel">
+					<div class="panel-header">
+						<h2>Transfers</h2>
+						<button class="btn btn-red btn-sm" onclick="showPage('addTransfer')">+ Add Transfer</button>
+					</div>
+					<div class="panel-body" style="padding:0;">
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th>Date</th>
+									<th>Account Name</th>
+									<th>Currency</th>
+									<th class="text-right">Amount</th>
+									<th class="text-right">Status</th>
+									<th class="text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody id="transfers-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- =========== ADD TRANSFER =========== -->
+			<div class="admin-page" id="page-addTransfer">
+				<div class="page-title">Add Transfer</div>
+				<div class="page-sub">Manually add a transfer entry to a user's history</div>
+
+				<div class="panel">
+					<div class="panel-header"><h2>New Transfer Entry</h2></div>
+					<div class="panel-body">
+						<!-- User selector -->
+						<div class="user-selector-bar" style="margin-bottom:20px;">
+							<label>For user:</label>
+							<select id="at-user-select"></select>
+						</div>
+
+						<div class="form-grid cols3">
+							<div class="field">
+								<label>Account Name</label>
+								<input type="text" id="at-account" placeholder="Will auto-fill from user" readonly style="background:#f7f7f7;" />
+							</div>
+							<div class="field">
+								<label>Date</label>
+								<input type="date" id="at-date" />
+							</div>
+							<div class="field">
+								<label>Currency</label>
+								<select id="at-currency">
+									<option value="EUR">EUR</option>
+									<option value="USD">USD</option>
+									<option value="SGD">SGD</option>
+									<option value="GBP">GBP</option>
+								</select>
+							</div>
+							<div class="field">
+								<label>Amount</label>
+								<input type="number" id="at-amount" placeholder="0.00" step="0.01" min="0.01" />
+							</div>
+							<div class="field">
+								<label>Status</label>
+								<select id="at-status">
+									<option value="pending">Pending</option>
+									<option value="completed">Completed</option>
+									<option value="failed">Failed</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-actions">
+							<button class="btn btn-red" onclick="adminAddTransfer()">Add Transfer</button>
+							<button class="btn btn-gray" onclick="clearAddTransfer()">Clear</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- =========== NOTIFICATIONS =========== -->
+			<div class="admin-page" id="page-notifications">
+				<div class="page-title">Send Notification</div>
+				<div class="page-sub">Push a message to a specific user's notification center</div>
+
+				<div class="panel">
+					<div class="panel-header"><h2>New Notification</h2></div>
+					<div class="panel-body">
+						<div class="user-selector-bar" style="margin-bottom:16px;">
+							<label>Send to:</label>
+							<select id="notif-user-select" onchange="renderNotifHistory()"></select>
+						</div>
+						<div class="form-grid" style="max-width:100%;">
+							<div class="field form-full">
+								<label>Message</label>
+								<textarea id="notif-message" placeholder="e.g. Your transfer of 5,000 EUR has been completed successfully."></textarea>
+							</div>
+						</div>
+						<div class="form-actions">
+							<button class="btn btn-red" onclick="sendNotification()">Send Notification</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="panel">
+					<div class="panel-header"><h2 id="notif-history-title">Notification History</h2></div>
+					<div class="panel-body" style="padding:0;">
+						<table class="admin-table">
+							<thead><tr><th>Date</th><th>Message</th><th class="text-right">Read</th><th class="text-right">Delete</th></tr></thead>
+							<tbody id="notif-history-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+		</main>
+	</div>
+</div>
+
+<!-- =========== EDIT USER MODAL =========== -->
+<div class="modal-overlay" id="editUserModal">
+	<div class="modal">
+		<div class="modal-header">
+			<h3>Edit User</h3>
+			<button class="modal-close" onclick="closeModal('editUserModal')">✕</button>
+		</div>
+		<div class="modal-body">
+			<input type="hidden" id="eu-orig-id" />
+			<div class="form-grid">
+				<div class="field"><label>Full Name</label><input type="text" id="eu-name" /></div>
+				<div class="field"><label>User ID</label><input type="text" id="eu-id" /></div>
+				<div class="field"><label>PIN</label><input type="text" id="eu-pin" /></div>
+				<div class="field"><label>Account / Company</label><input type="text" id="eu-account" /></div>
+				<div class="field"><label>Currency</label>
+					<select id="eu-currency">
+						<option value="EUR">EUR</option>
+						<option value="USD">USD</option>
+						<option value="SGD">SGD</option>
+						<option value="GBP">GBP</option>
+					</select>
+				</div>
+				<div class="field"><label>Balance</label><input type="number" id="eu-balance" step="0.01" min="0" /></div>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-red" onclick="saveEditUser()">Save Changes</button>
+			<button class="btn btn-gray" onclick="closeModal('editUserModal')">Cancel</button>
+		</div>
+	</div>
+</div>
+
+<!-- =========== EDIT TRANSFER MODAL =========== -->
+<div class="modal-overlay" id="editTxModal">
+	<div class="modal">
+		<div class="modal-header">
+			<h3>Edit Transfer</h3>
+			<button class="modal-close" onclick="closeModal('editTxModal')">✕</button>
+		</div>
+		<div class="modal-body">
+			<input type="hidden" id="em-tx-id" />
+			<input type="hidden" id="em-tx-uid" />
+			<div class="form-grid cols3">
+				<div class="field"><label>Account Name</label><input type="text" id="em-account" /></div>
+				<div class="field"><label>Currency</label>
+					<select id="em-currency">
+						<option value="EUR">EUR</option>
+						<option value="USD">USD</option>
+						<option value="SGD">SGD</option>
+						<option value="GBP">GBP</option>
+					</select>
+				</div>
+				<div class="field"><label>Amount</label><input type="number" id="em-amount" step="0.01" /></div>
+				<div class="field"><label>Status</label>
+					<select id="em-status">
+						<option value="pending">Pending</option>
+						<option value="completed">Completed</option>
+						<option value="failed">Failed</option>
+					</select>
+				</div>
+				<div class="field"><label>Date</label><input type="date" id="em-date" /></div>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-red" onclick="saveEditTransfer()">Save Changes</button>
+			<button class="btn btn-gray" onclick="closeModal('editTxModal')">Cancel</button>
+		</div>
+	</div>
+</div>
+
+<div class="admin-toast" id="adminToast"></div>
+
+<script src="js/db.js"></script>
+<script>
+/* ============================================================
+   AUTH
+============================================================ */
+const ADMIN_ID   = "655016554";
+const ADMIN_PASS = "11559900";
+
+function adminLogin() {
+	const id   = document.getElementById('adminId').value.trim();
+	const pass = document.getElementById('adminPass').value.trim();
+	if (id === ADMIN_ID && pass === ADMIN_PASS) {
+		document.getElementById('loginScreen').style.display = 'none';
+		document.getElementById('adminApp').style.display = 'flex';
+		refreshAll();
+	} else {
+		document.getElementById('loginError').style.display = 'block';
+	}
+}
+document.addEventListener('keydown', e => {
+	if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') adminLogin();
+});
+function adminLogout() {
+	document.getElementById('adminApp').style.display = 'none';
+	document.getElementById('loginScreen').style.display = 'flex';
+	document.getElementById('adminId').value  = '';
+	document.getElementById('adminPass').value = '';
+	document.getElementById('loginError').style.display = 'none';
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function showPage(name) {
+	document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+	document.querySelectorAll('.admin-nav-item').forEach(n => n.classList.remove('active'));
+	document.getElementById('page-' + name).classList.add('active');
+	document.querySelectorAll('.admin-nav-item').forEach(n => {
+		if ((n.getAttribute('onclick') || '').includes("'" + name + "'")) n.classList.add('active');
+	});
+	// Populate user selectors whenever a page with one is shown
+	populateUserSelects();
+	refreshAll();
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let toastTimer;
+function toast(msg, isErr = false) {
+	const t = document.getElementById('adminToast');
+	t.textContent = msg;
+	t.classList.toggle('err', isErr);
+	t.classList.add('show');
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ============================================================
+   MODALS
+============================================================ */
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+	m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+/* ============================================================
+   USER SELECTORS — populate dropdowns across pages
+============================================================ */
+function populateUserSelects() {
+	const users = DB.getUsers();
+	const ids = ['tx-user-select', 'at-user-select', 'notif-user-select'];
+	ids.forEach(sid => {
+		const sel = document.getElementById(sid);
+		if (!sel) return;
+		const prev = sel.value;
+		sel.innerHTML = users.map(u =>
+			`<option value="${u.id}">${u.name} (${u.id})</option>`
+		).join('');
+		if (prev && users.find(u => u.id === prev)) sel.value = prev;
+	});
+	// Auto-fill account name in Add Transfer when user changes
+	const atSel = document.getElementById('at-user-select');
+	if (atSel) {
+		atSel.onchange = function() { fillAtAccount(); };
+		fillAtAccount();
+	}
+}
+
+function fillAtAccount() {
+	const uid = document.getElementById('at-user-select').value;
+	const u = DB.getUserById(uid);
+	if (u) {
+		document.getElementById('at-account').value  = u.account;
+		document.getElementById('at-currency').value = u.currency;
+	}
+}
+
+/* ============================================================
+   REFRESH ALL
+============================================================ */
+function refreshAll() {
+	renderDashboard();
+	renderUsers();
+	renderTransfers();
+	renderNotifHistory();
+}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+function renderDashboard() {
+	const users = DB.getUsers();
+	let totalTx = 0, pending = 0, unread = 0;
+	users.forEach(u => {
+		const txs = DB.getTransfers(u.id);
+		totalTx += txs.length;
+		pending += txs.filter(t => t.status === 'pending').length;
+		unread  += DB.unreadCount(u.id);
+	});
+	document.getElementById('stat-users').textContent   = users.length;
+	document.getElementById('stat-txcount').textContent = totalTx;
+	document.getElementById('stat-pending').textContent = pending;
+	document.getElementById('stat-notifs').textContent  = unread;
+
+	// Recent transfers — collect all, sort by date desc, take 6
+	let all = [];
+	users.forEach(u => {
+		DB.getTransfers(u.id).forEach(t => all.push({ ...t, _userName: u.name, _userAccount: u.account }));
+	});
+	all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+	const tbody = document.getElementById('dash-tx-body');
+	if (all.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transfers yet</td></tr>';
+		return;
+	}
+	tbody.innerHTML = all.slice(0, 6).map(t => `
+		<tr>
+			<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+			<td class="td-bold">${t._userName}</td>
+			<td>${t._userAccount || t.account || '—'}</td>
+			<td>${t.currency}</td>
+			<td class="text-right td-bold" style="color:#c50000;">${DB.fmt(t.amount)}</td>
+			<td class="text-right">${badgeHtml(t.status)}</td>
+		</tr>`).join('');
+}
+
+/* ============================================================
+   USERS LIST
+============================================================ */
+function renderUsers() {
+	const users = DB.getUsers();
+	const tbody = document.getElementById('users-body');
+	if (users.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users yet</td></tr>';
+		return;
+	}
+	tbody.innerHTML = users.map(u => `
+		<tr>
+			<td class="td-bold">${u.name}</td>
+			<td class="td-muted">${u.id}</td>
+			<td>${u.account}</td>
+			<td>${u.currency}</td>
+			<td class="text-right td-bold">${DB.fmt(u.balance)} ${u.currency}</td>
+			<td class="text-right">
+				<div class="btn-group" style="justify-content:flex-end;">
+					<button class="btn btn-outline btn-sm" onclick="openEditUser('${u.id}')">Edit</button>
+					<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">✕</button>
+				</div>
+			</td>
+		</tr>`).join('');
+}
+
+/* ---- Add User ---- */
+function adminAddUser() {
+	const name    = document.getElementById('au-name').value.trim();
+	const id      = document.getElementById('au-id').value.trim();
+	const pin     = document.getElementById('au-pin').value.trim();
+	const account = document.getElementById('au-account').value.trim();
+	const ccy     = document.getElementById('au-currency').value;
+	const bal     = parseFloat(document.getElementById('au-balance').value) || 0;
+
+	if (!name || !id || !pin || !account) { toast('All fields except balance are required.', true); return; }
+
+	const ok = DB.addUser({ id, pin, name, account, currency: ccy, balance: bal });
+	if (!ok) { toast('User ID already exists. Choose a different ID.', true); return; }
+
+	clearAddUser();
+	populateUserSelects();
+	renderUsers();
+	renderDashboard();
+	toast('User "' + name + '" created successfully.');
+	showPage('users');
+}
+function clearAddUser() {
+	['au-name','au-id','au-pin','au-account'].forEach(i => document.getElementById(i).value = '');
+	document.getElementById('au-currency').value = 'EUR';
+	document.getElementById('au-balance').value  = '';
+}
+
+/* ---- Edit User Modal ---- */
+function openEditUser(id) {
+	const u = DB.getUserById(id);
+	if (!u) return;
+	document.getElementById('eu-orig-id').value  = u.id;
+	document.getElementById('eu-name').value     = u.name;
+	document.getElementById('eu-id').value       = u.id;
+	document.getElementById('eu-pin').value      = u.pin;
+	document.getElementById('eu-account').value  = u.account;
+	document.getElementById('eu-currency').value = u.currency;
+	document.getElementById('eu-balance').value  = u.balance;
+	document.getElementById('editUserModal').classList.add('open');
+}
+function saveEditUser() {
+	const origId = document.getElementById('eu-orig-id').value;
+	const patch = {
+		id:       document.getElementById('eu-id').value.trim(),
+		pin:      document.getElementById('eu-pin').value.trim(),
+		name:     document.getElementById('eu-name').value.trim(),
+		account:  document.getElementById('eu-account').value.trim(),
+		currency: document.getElementById('eu-currency').value,
+		balance:  parseFloat(document.getElementById('eu-balance').value) || 0
+	};
+	if (!patch.name || !patch.id || !patch.pin || !patch.account) { toast('All fields required.', true); return; }
+	DB.updateUser(origId, patch);
+	closeModal('editUserModal');
+	populateUserSelects();
+	renderUsers();
+	renderDashboard();
+	toast('User updated successfully.');
+}
+
+/* ---- Delete User ---- */
+function deleteUser(id) {
+	const u = DB.getUserById(id);
+	if (!confirm('Delete user "' + (u ? u.name : id) + '" and all their data?')) return;
+	DB.deleteUser(id);
+	populateUserSelects();
+	renderUsers();
+	renderDashboard();
+	toast('User deleted.');
+}
+
+/* ============================================================
+   TRANSFERS
+============================================================ */
+function badgeHtml(status) {
+	if (status === 'completed') return '<span class="badge badge-completed">Completed</span>';
+	if (status === 'failed')    return '<span class="badge badge-failed">Failed</span>';
+	return '<span class="badge badge-pending">Pending</span>';
+}
+
+function getSelectedTxUser() {
+	const sel = document.getElementById('tx-user-select');
+	return sel ? sel.value : (DB.getUser() || {}).id;
+}
+
+function renderTransfers() {
+	const uid = getSelectedTxUser();
+	const u = DB.getUserById(uid);
+	const transfers = uid ? DB.getTransfers(uid) : [];
+	const tbody = document.getElementById('transfers-body');
+	if (!tbody) return;
+	if (transfers.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transfers for this user</td></tr>';
+		return;
+	}
+	tbody.innerHTML = transfers.map(t => `
+		<tr>
+			<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+			<td class="td-bold">${t.account || (u ? u.account : '—')}</td>
+			<td>${t.currency}</td>
+			<td class="text-right td-bold" style="color:#c50000;">${DB.fmt(t.amount)}</td>
+			<td class="text-right">${badgeHtml(t.status)}</td>
+			<td class="text-right">
+				<div class="btn-group" style="justify-content:flex-end;">
+					${t.status === 'pending' ? `<button class="btn btn-green btn-sm" onclick="setTxStatus(${t.id},'completed','${uid}')">Approve</button>` : ''}
+					${t.status === 'pending' ? `<button class="btn btn-gray btn-sm" onclick="setTxStatus(${t.id},'failed','${uid}')">Reject</button>` : ''}
+					<button class="btn btn-outline btn-sm" onclick="openEditTx(${t.id},'${uid}')">Edit</button>
+					<button class="btn btn-danger btn-sm" onclick="deleteTx(${t.id},'${uid}')">✕</button>
+				</div>
+			</td>
+		</tr>`).join('');
+}
+
+function setTxStatus(id, status, uid) {
+	DB.updateTransfer(id, { status }, uid);
+	renderTransfers();
+	renderDashboard();
+	toast('Transfer marked as ' + status + '.');
+}
+
+function deleteTx(id, uid) {
+	if (!confirm('Delete this transfer record?')) return;
+	DB.deleteTransfer(id, uid);
+	renderTransfers();
+	renderDashboard();
+	toast('Transfer deleted.');
+}
+
+/* ---- Edit Transfer Modal ---- */
+function openEditTx(id, uid) {
+	const t = DB.getTransfers(uid).find(x => x.id == id);
+	if (!t) return;
+	document.getElementById('em-tx-id').value    = t.id;
+	document.getElementById('em-tx-uid').value   = uid;
+	document.getElementById('em-account').value  = t.account || '';
+	document.getElementById('em-currency').value = t.currency;
+	document.getElementById('em-amount').value   = t.amount;
+	document.getElementById('em-status').value   = t.status;
+	// Format date for input[type=date]
+	const d = new Date(t.createdAt);
+	const ds = d.toISOString().split('T')[0];
+	document.getElementById('em-date').value = ds;
+	document.getElementById('editTxModal').classList.add('open');
+}
+function saveEditTransfer() {
+	const id  = document.getElementById('em-tx-id').value;
+	const uid = document.getElementById('em-tx-uid').value;
+	const dateVal = document.getElementById('em-date').value;
+	const patch = {
+		account:  document.getElementById('em-account').value.trim(),
+		currency: document.getElementById('em-currency').value,
+		amount:   parseFloat(document.getElementById('em-amount').value),
+		status:   document.getElementById('em-status').value
+	};
+	if (dateVal) patch.createdAt = new Date(dateVal).toISOString();
+	DB.updateTransfer(id, patch, uid);
+	closeModal('editTxModal');
+	renderTransfers();
+	renderDashboard();
+	toast('Transfer updated.');
+}
+
+/* ---- Add Transfer ---- */
+function adminAddTransfer() {
+	const uid = document.getElementById('at-user-select').value;
+	const u   = DB.getUserById(uid);
+	const amt = parseFloat(document.getElementById('at-amount').value);
+	if (!uid) { toast('Please select a user.', true); return; }
+	if (!amt || amt <= 0) { toast('Enter a valid amount.', true); return; }
+
+	const dateVal = document.getElementById('at-date').value;
+	const entry = {
+		account:  document.getElementById('at-account').value.trim() || (u ? u.account : ''),
+		currency: document.getElementById('at-currency').value,
+		amount:   amt,
+		status:   document.getElementById('at-status').value,
+		// store minimal fields matching what user view shows
+		recipientName: document.getElementById('at-account').value.trim() || (u ? u.account : ''),
+	};
+	if (dateVal) entry.createdAt = new Date(dateVal + 'T12:00:00').toISOString();
+
+	DB.addTransfer(entry, uid);
+	clearAddTransfer();
+	renderTransfers();
+	renderDashboard();
+	toast('Transfer added to history.');
+	showPage('transfers');
+}
+function clearAddTransfer() {
+	document.getElementById('at-amount').value  = '';
+	document.getElementById('at-date').value    = '';
+	document.getElementById('at-status').value  = 'pending';
+	fillAtAccount();
+}
+
+/* ============================================================
+   NOTIFICATIONS
+============================================================ */
+function getSelectedNotifUser() {
+	const sel = document.getElementById('notif-user-select');
+	return sel ? sel.value : (DB.getUser() || {}).id;
+}
+
+function sendNotification() {
+	const uid = getSelectedNotifUser();
+	const msg = document.getElementById('notif-message').value.trim();
+	if (!uid) { toast('Please select a user.', true); return; }
+	if (!msg) { toast('Message cannot be empty.', true); return; }
+	DB.addNotification({ message: msg }, uid);
+	document.getElementById('notif-message').value = '';
+	renderNotifHistory();
+	renderDashboard();
+	const u = DB.getUserById(uid);
+	toast('Notification sent to ' + (u ? u.name : uid) + '.');
+}
+
+function renderNotifHistory() {
+	const uid = getSelectedNotifUser();
+	const u = DB.getUserById(uid);
+	const notes = uid ? DB.getNotifications(uid) : [];
+	const tbody = document.getElementById('notif-history-body');
+	const title = document.getElementById('notif-history-title');
+	if (!tbody) return;
+	if (title && u) title.textContent = 'Notifications — ' + u.name;
+	if (notes.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No notifications for this user</td></tr>';
+		return;
+	}
+	tbody.innerHTML = notes.map(n => `
+		<tr>
+			<td class="td-muted">${DB.fmtDate(n.createdAt)}</td>
+			<td>${n.message}</td>
+			<td class="text-right">${n.read
+				? '<span style="color:#00a651;font-weight:600;">✓ Read</span>'
+				: '<span style="color:#aaa;">Unread</span>'}</td>
+			<td class="text-right">
+				<button class="btn btn-danger btn-sm" onclick="deleteNotif(${n.id},'${uid}')">✕</button>
+			</td>
+		</tr>`).join('');
+}
+
+function deleteNotif(id, uid) {
+	DB.deleteNotification(id, uid);
+	renderNotifHistory();
+	renderDashboard();
+	toast('Notification deleted.');
+}
+</script>
+</body>
+</html>

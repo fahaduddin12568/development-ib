@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>DBS iBanking Dashboard</title>
+	<link rel="shortcut icon" href="images/dbs_logo_min1.png">
+	<link rel="stylesheet" href="css/main_style.css" />
+</head>
+<body>
+
+	<div id="unavailableToast" class="unavail-toast">Not available for overseas account</div>
+
+	<!-- TOP HEADER BAR -->
+	<div class="top">
+		<img src="images/logowhite.png" alt="DBS" />
+		<div class="top-nav">
+			<a href="main.html" class="top-nav-active">Banking</a>
+			<a href="#" class="nav-inactive" onclick="showUnavail(event)">Investments</a>
+			<a href="#" class="nav-inactive" onclick="showUnavail(event)">Insurance</a>
+			<a href="#" class="nav-inactive" onclick="showUnavail(event)">More</a>
+		</div>
+		<div class="top-right">
+			<div class="notif-wrap">
+				<img id="notifBell" src="images/bell.png" height="20" style="cursor:pointer;" alt="Notifications" />
+				<span id="notifBadge" class="notif-badge" style="display:none;"></span>
+				<div id="notifPopup" class="notif-popup">
+					<div class="notif-popup-header">Notifications <span id="notifMarkRead" style="font-size:11px;font-weight:400;color:#c50000;cursor:pointer;float:right;">Mark all read</span></div>
+					<ul id="notifList" class="notif-list"></ul>
+				</div>
+			</div>
+			<div class="user-info">
+				<span class="user-name" id="headerName">Hironori Sugiyama</span>
+				<span class="user-id" id="headerUid">User ID: 655016554</span>
+			</div>
+			<a href="index.html" class="logout">Proceed to Logout</a>
+		</div>
+	</div>
+
+	<!-- SECONDARY NAV -->
+	<div class="sub-nav">
+		<a href="main.html" class="sub-nav-active">Overview</a>
+		<a href="#" class="sub-nav-inactive" onclick="showUnavail(event)">Accounts</a>
+		<a href="transfer.html">Transfer &amp; Pay</a>
+		<a href="#" class="sub-nav-inactive" onclick="showUnavail(event)">Cards</a>
+		<a href="#" class="sub-nav-inactive" onclick="showUnavail(event)">Investments</a>
+		<a href="#" class="sub-nav-inactive" onclick="showUnavail(event)">Loans</a>
+		<a href="#" class="sub-nav-inactive" onclick="showUnavail(event)">PayLah!</a>
+	</div>
+
+	<!-- WELCOME BANNER -->
+	<div class="welcome">
+		<div class="welcome-inner">
+			<div>
+				<div class="welcome-title">Welcome Back, <b id="welcomeName">Hironori Sugiyama</b></div>
+				<div class="welcome-sub">Last login: 01 May 2026, 09:14 AM &nbsp;&bull;&nbsp; Last login from: Singapore</div>
+			</div>
+			<div class="welcome-total">
+				<span class="welcome-total-label">Total Net Worth</span>
+				<span class="welcome-total-value" id="totalNetWorth">180,357.86 EUR</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- ALERT BANNER -->
+	<div class="alert-banner">
+		<span class="alert-icon">&#9888;</span>
+		Stay vigilant against online marketplace and social media phishing. Never share your OTP or click suspicious links.
+	</div>
+
+	<!-- SUMMARY CARDS GRID -->
+	<div class="grid">
+		<div class="card c-orange">
+			<div class="card-header">
+				<h3>Investment Portfolios</h3>
+				<span class="card-arrow">&#8250;</span>
+			</div>
+			<div class="card-value" id="cardBalance">180,357.86 EUR</div>
+			<div class="card-sub">Total Amount</div>
+		</div>
+		<div class="card c-purple card-inactive" onclick="showUnavail(event)">
+			<div class="card-header"><h3>Cards</h3></div>
+			<div class="card-value card-value-dim">0.00 SGD</div>
+			<div class="card-sub">Total Outstanding Amount</div>
+		</div>
+		<div class="card c-green card-inactive" onclick="showUnavail(event)">
+			<div class="card-header"><h3>Deposits</h3></div>
+			<div class="card-value card-value-dim">0.00 SGD</div>
+			<div class="card-sub">Total Available Balance</div>
+		</div>
+		<div class="card c-red card-inactive" onclick="showUnavail(event)">
+			<div class="card-header"><h3>Other Banking Investments</h3></div>
+			<div class="card-value card-value-dim">0.00 SGD</div>
+			<div class="card-sub">Total Amount</div>
+		</div>
+		<div class="card c-blue card-inactive" onclick="showUnavail(event)">
+			<div class="card-header"><h3>Loans</h3></div>
+			<div class="card-value card-value-dim">0.00 SGD</div>
+			<div class="card-sub">Total Outstanding Balance</div>
+		</div>
+		<div class="card c-yellow card-inactive" onclick="showUnavail(event)">
+			<div class="card-header"><h3>PayLah!</h3></div>
+			<div class="card-value card-value-dim">0.00 SGD</div>
+			<div class="card-sub">Total Available Balance</div>
+		</div>
+	</div>
+
+	<!-- MAIN CONTENT AREA -->
+	<div class="content-area">
+
+		<!-- LEFT: INVESTMENT TABLE -->
+		<div class="panel deposits-panel">
+			<div class="panel-header">
+				<h2>Investment Portfolios</h2>
+				<a href="#" class="panel-link">View all &#8250;</a>
+			</div>
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Account Name</th>
+						<th>Date</th>
+						<th>Currency</th>
+						<th class="text-right">Amount</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="td-bold" id="portfolioName">Galidix Limited</td>
+						<td class="td-muted">12.01.2026</td>
+						<td id="portfolioCcy">EUR</td>
+						<td class="text-right td-bold" id="portfolioBalance">180,357.86</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="panel-footer">
+				<span>Total Amount</span>
+				<span class="footer-value" id="portfolioTotal">180,357.86 EUR</span>
+			</div>
+		</div>
+
+		<!-- RIGHT: SIDEBAR -->
+		<div class="sidebar">
+
+			<div class="panel quick-actions-panel">
+				<div class="panel-header"><h2>Quick Actions</h2></div>
+				<div class="quick-actions">
+					<!-- Transfer Funds: ACTIVE -->
+					<button class="qa-btn" onclick="window.location.href='transfer.html'">
+						<span class="qa-icon qa-icon-active">&#8652;</span>
+						<span>Transfer Funds</span>
+					</button>
+					<!-- Pay Bills: INACTIVE -->
+					<button class="qa-btn qa-btn-inactive" onclick="showUnavail(event)">
+						<span class="qa-icon">&#128179;</span>
+						<span>Pay Bills</span>
+					</button>
+					<!-- Add Payee: INACTIVE -->
+					<button class="qa-btn qa-btn-inactive" onclick="showUnavail(event)">
+						<span class="qa-icon">&#43;</span>
+						<span>Add Payee</span>
+					</button>
+					<!-- Statements: INACTIVE -->
+					<button class="qa-btn qa-btn-inactive" onclick="showUnavail(event)">
+						<span class="qa-icon">&#128202;</span>
+						<span>Statements</span>
+					</button>
+				</div>
+			</div>
+
+			<div class="panel recent-panel">
+				<div class="panel-header">
+					<h2>Recent Activity</h2>
+					<a href="transfer.html" class="panel-link">View all &#8250;</a>
+				</div>
+				<ul class="transaction-list" id="recentActivity">
+					<li class="txn-item txn-empty">
+						<div class="txn-details">
+							<span class="txn-name">No activity yet</span>
+							<span class="txn-date">—</span>
+						</div>
+						<span class="txn-amount txn-neutral">—</span>
+					</li>
+				</ul>
+			</div>
+
+		</div>
+	</div>
+
+	<!-- FOOTER -->
+	<footer>
+		<div>
+			<div class="footer-heading">Resources</div>
+			<a href="https://www.dbs.com.sg/treasures/pricing-guide.page">View Pricing Guide</a>
+			<a href="https://www.dbs.com.sg/personal/deposits/deposit-insurance-scheme.page">Deposit Insurance Scheme</a>
+			<a href="https://www.dbs.com/terms/default.page">Terms &amp; Conditions</a>
+		</div>
+		<div>
+			<div class="footer-heading">Help &amp; Support</div>
+			<a href="https://www.youtube.com/watch?v=ew9OKlyTxcU">Introduction Video</a>
+			<a href="https://www.dbs.com.sg/personal/landing/new-ibanking-pb/videos.html">Transactions Video Guide</a>
+			<a href="https://www.dbs.com.sg/personal/support/home.html">FAQ</a>
+		</div>
+		<div>
+			<div class="footer-heading">Contact Us</div>
+			<a href="https://www.dbs.com.sg/personal/bank-with-ease/contact-us">Email Us</a>
+			<a href="#">Singapore 1800 221 1111</a>
+			<a href="https://www.dbs.com.sg/index/locator.page">Our Branches &amp; ATMs</a>
+		</div>
+	</footer>
+
+	<script src="js/db.js"></script>
+	<script>
+	// ---- Populate from DB ----
+	(function() {
+		const user = DB.getUser();
+		document.getElementById('welcomeName').textContent = user.name;
+		document.getElementById('headerName').textContent = user.name;
+		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
+		document.getElementById('portfolioName').textContent = user.account;
+		document.getElementById('portfolioCcy').textContent = user.currency;
+		document.getElementById('cardBalance').textContent = DB.fmt(user.balance) + ' ' + user.currency;
+		document.getElementById('portfolioBalance').textContent = DB.fmt(user.balance);
+		document.getElementById('portfolioTotal').textContent = DB.fmt(user.balance) + ' ' + user.currency;
+		document.getElementById('totalNetWorth').textContent = DB.fmt(user.balance) + ' ' + user.currency;
+
+		// Recent activity from transfers
+		const transfers = DB.getTransfers().slice(0, 5);
+		const ul = document.getElementById('recentActivity');
+		if (transfers.length === 0) return;
+		ul.innerHTML = '';
+		transfers.forEach(t => {
+			const statusClass = t.status === 'completed' ? 'txn-debit' : 'txn-pending';
+			const statusLabel = t.status === 'completed' ? '' : ' · Pending';
+			ul.innerHTML += `
+			<li class="txn-item">
+				<div class="txn-details">
+					<span class="txn-name">${t.recipientName}</span>
+					<span class="txn-date">${DB.fmtDate(t.createdAt)}${statusLabel}</span>
+				</div>
+				<span class="txn-amount ${statusClass}">-${DB.fmt(t.amount)} ${t.currency}</span>
+			</li>`;
+		});
+	})();
+
+	// ---- Notifications ----
+	function renderNotifications() {
+		const notes = DB.getNotifications();
+		const badge = document.getElementById('notifBadge');
+		const ul = document.getElementById('notifList');
+		const unread = DB.unreadCount();
+		badge.style.display = unread > 0 ? 'flex' : 'none';
+		badge.textContent = unread;
+		if (notes.length === 0) {
+			ul.innerHTML = '<li class="notif-empty">No new notifications</li>';
+			return;
+		}
+		ul.innerHTML = notes.map(n => `
+			<li class="notif-item ${n.read ? '' : 'notif-unread'}">
+				<div class="notif-msg">${n.message}</div>
+				<div class="notif-time">${DB.fmtDate(n.createdAt)}</div>
+			</li>`).join('');
+	}
+	renderNotifications();
+
+	document.getElementById("notifBell").onclick = function (e) {
+		e.stopPropagation();
+		const popup = document.getElementById("notifPopup");
+		const isVisible = popup.style.display === "block";
+		popup.style.display = isVisible ? "none" : "block";
+		if (!isVisible) { DB.markNotificationsRead(); renderNotifications(); }
+	};
+	document.getElementById('notifMarkRead').onclick = function(e) {
+		e.stopPropagation();
+		DB.markNotificationsRead();
+		renderNotifications();
+	};
+	document.addEventListener('click', function(e) {
+		if (!e.target.closest('.notif-wrap')) document.getElementById("notifPopup").style.display = "none";
+	});
+
+	// ---- Toast ----
+	let toastTimer = null;
+	function showUnavail(e) {
+		e.preventDefault();
+		const toast = document.getElementById("unavailableToast");
+		toast.classList.add("show");
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
+	}
+	</script>
+</body>
+</html>
