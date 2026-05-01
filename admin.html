@@ -234,8 +234,8 @@
 		<p>DBS iBanking — Internal Management</p>
 		<div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
 		<div class="login-field">
-			<label>Admin ID</label>
-			<input type="text" id="adminId" placeholder="Admin ID" autocomplete="off" />
+			<label>Email</label>
+			<input type="text" id="adminId" placeholder="admin@dbs.com" autocomplete="off" />
 		</div>
 		<div class="login-field">
 			<label>Password</label>
@@ -583,8 +583,8 @@
 /* ============================================================
    AUTH
 ============================================================ */
-const ADMIN_ID   = "655016554";
-const ADMIN_PASS = "11559900";
+const ADMIN_ID   = "admin@dbs.com";
+const ADMIN_PASS = "admin123";
 
 function adminLogin() {
 	const id   = document.getElementById('adminId').value.trim();
