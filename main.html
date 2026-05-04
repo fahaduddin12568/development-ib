@@ -107,11 +107,10 @@
 	<!-- MAIN CONTENT AREA -->
 	<div class="content-area">
 
-		<!-- LEFT: INVESTMENT TABLE -->
+		<!-- LEFT: TRANSACTION HISTORY TABLE -->
 		<div class="panel deposits-panel">
 			<div class="panel-header">
-				<h2>Investment Portfolios</h2>
-				<a href="#" class="panel-link">View all &#8250;</a>
+				<h2>Transaction History</h2>
 			</div>
 			<table class="data-table">
 				<thead>
@@ -119,22 +118,17 @@
 						<th>Account Name</th>
 						<th>Date</th>
 						<th>Currency</th>
+						<th>Type</th>
 						<th class="text-right">Amount</th>
+						<th class="text-right">Status</th>
 					</tr>
 				</thead>
-				<tbody>
+				<tbody id="txHistoryBody">
 					<tr>
-						<td class="td-bold" id="portfolioName">Galidix Limited</td>
-						<td class="td-muted">12.01.2026</td>
-						<td id="portfolioCcy">EUR</td>
-						<td class="text-right td-bold" id="portfolioBalance">180,357.86</td>
+						<td colspan="6" class="td-muted" style="text-align:center;padding:20px;">No transactions yet</td>
 					</tr>
 				</tbody>
 			</table>
-			<div class="panel-footer">
-				<span>Total Amount</span>
-				<span class="footer-value" id="portfolioTotal">180,357.86 EUR</span>
-			</div>
 		</div>
 
 		<!-- RIGHT: SIDEBAR -->
@@ -169,7 +163,6 @@
 			<div class="panel recent-panel">
 				<div class="panel-header">
 					<h2>Recent Activity</h2>
-					<a href="transfer.html" class="panel-link">View all &#8250;</a>
 				</div>
 				<ul class="transaction-list" id="recentActivity">
 					<li class="txn-item txn-empty">
@@ -215,12 +208,37 @@
 		document.getElementById('welcomeName').textContent = user.name;
 		document.getElementById('headerName').textContent = user.name;
 		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
-		document.getElementById('portfolioName').textContent = user.account;
-		document.getElementById('portfolioCcy').textContent = user.currency;
 		document.getElementById('cardBalance').textContent = DB.fmt(user.balance) + ' ' + user.currency;
-		document.getElementById('portfolioBalance').textContent = DB.fmt(user.balance);
-		document.getElementById('portfolioTotal').textContent = DB.fmt(user.balance) + ' ' + user.currency;
 		document.getElementById('totalNetWorth').textContent = DB.fmt(user.balance) + ' ' + user.currency;
+
+		// Transaction History
+		const allTransfers = DB.getTransfers();
+		const tbody = document.getElementById('txHistoryBody');
+		if (allTransfers.length === 0) {
+			tbody.innerHTML = '<tr><td colspan="6" class="td-muted" style="text-align:center;padding:20px;">No transactions yet</td></tr>';
+		} else {
+			tbody.innerHTML = allTransfers.map(t => {
+				const isIncoming = t.direction === 'incoming';
+				const amtColor = isIncoming ? '#00a651' : '#c50000';
+				const amtPrefix = isIncoming ? '+' : '-';
+				const typeLabel = isIncoming
+					? '<span style="color:#00a651;font-weight:600;">Incoming</span>'
+					: '<span style="color:#c50000;font-weight:600;">Outgoing</span>';
+				const statusLabel = t.status === 'completed'
+					? '<span style="color:#00a651;">Completed</span>'
+					: t.status === 'failed'
+					? '<span style="color:#c50000;">Failed</span>'
+					: '<span style="color:#f5a623;">Pending</span>';
+				return `<tr>
+					<td class="td-bold">${t.recipientName || t.account || '—'}</td>
+					<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+					<td>${t.currency}</td>
+					<td>${typeLabel}</td>
+					<td class="text-right td-bold" style="color:${amtColor};">${amtPrefix}${DB.fmt(t.amount)}</td>
+					<td class="text-right">${statusLabel}</td>
+				</tr>`;
+			}).join('');
+		}
 
 		// Recent activity from transfers
 		const transfers = DB.getTransfers().slice(0, 5);
@@ -228,15 +246,18 @@
 		if (transfers.length === 0) return;
 		ul.innerHTML = '';
 		transfers.forEach(t => {
-			const statusClass = t.status === 'completed' ? 'txn-debit' : 'txn-pending';
+			const isIncoming = t.direction === 'incoming';
+			const statusClass = isIncoming ? 'txn-credit' : (t.status === 'completed' ? 'txn-debit' : 'txn-pending');
 			const statusLabel = t.status === 'completed' ? '' : ' · Pending';
+			const amtPrefix = isIncoming ? '+' : '-';
+			const amtStyle = isIncoming ? 'color:#00a651;font-weight:600;' : '';
 			ul.innerHTML += `
 			<li class="txn-item">
 				<div class="txn-details">
-					<span class="txn-name">${t.recipientName}</span>
+					<span class="txn-name">${t.recipientName || t.account || '—'}</span>
 					<span class="txn-date">${DB.fmtDate(t.createdAt)}${statusLabel}</span>
 				</div>
-				<span class="txn-amount ${statusClass}">-${DB.fmt(t.amount)} ${t.currency}</span>
+				<span class="txn-amount ${statusClass}" style="${amtStyle}">${amtPrefix}${DB.fmt(t.amount)} ${t.currency}</span>
 			</li>`;
 		});
 	})();
