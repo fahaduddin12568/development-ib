@@ -12,16 +12,10 @@
 
     <!-- jQuery -->
     <script src="js/jquery-3.3.1.js"></script>
-    <script src="js/jquery-migrate-3.0.1.js"></script>
-
-    <!-- Validation -->
-    <script src="js/client_validation.js"></script>
 </head>
 <body>
 
-<form class="MainForm" name="MainForm" method="post">
-    <input type="hidden" name="isCancelClicked" value="0">
-    <input type="hidden" name="isSubmitClicked" value="0">
+<form class="MainForm" name="MainForm">
 
     <div id="notification" class="notification">
         Stay vigilant against online marketplace and social media phishing. Never click on suspicious links or download apps from unofficial sources.
@@ -35,44 +29,35 @@
         <div class="form-row input-layout">
             <input tabindex="1" type="text" name="UID" id="UID" maxlength="20" autocomplete="off">
             <span class="highlight"></span>
-            <span id="uidBar" class="bar"></span>
+            <span class="bar"></span>
             <label>User ID</label>
         </div>
 
         <div id="errormsg" style="display:none" class="error-msg">
-            <h4 id="InvalidUserId">Sorry, you have entered an invalid User ID.</h4>
+            <h4>Sorry, you have entered an invalid User ID.</h4>
         </div>
 
         <div class="form-row input-layout pin">
             <input tabindex="2" type="password" maxlength="8" name="PIN" id="PIN" autocomplete="off">
             <span class="highlight"></span>
-            <span id="pinBar" class="bar"></span>
+            <span class="bar"></span>
             <label>PIN</label>
-        </div>
-
-        <div id="errormsg1" style="display:none" class="error-msg">
-            <h4 id="InvalidPIN">The PIN length should range from 6 to 9 digits.</h4>
         </div>
 
         <div class="mTop-38">
             <button class="btn btn-primary block mBot-12" onclick="CheckErr(document.forms['MainForm']);" type="button">Login</button>
-            <button class="btn btn-secondary right mBot-16" onclick="window.open('https://www.dbs.com.sg/personal/hoap/registration?brand=dbs&entry=ib','_blank');" type="button">Get Started</button>
+            <button class="btn btn-secondary right mBot-16" type="button" disabled>Get Started</button>
         </div>
 
         <div class="links">
             <ul>
-                <li>Forgot <a href="https://internet-banking.dbs.com.sg/ibAPL/Welcome">User ID</a> or <a href="https://internet-banking.dbs.com.sg/ibAPL/Welcome">PIN</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-ibanking-login-faq">Frequently Asked Questions</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-maintenance-schedule">Maintenance Schedule</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-security-and-you-phishing">Security & You</a></li>
+                <li>Forgot User ID or PIN? Contact your broker or reach us at <a href="mailto:support@dev-ib-international.com">support@dev-ib-international.com</a></li>
             </ul>
         </div>
     </div>
 </form>
 
 <script>
-// ----- FIXED ANIMATION + FLOATING LABEL + LOGIN REDIRECT -----
-
 function triggerShake() {
     const box = document.querySelector('.login-form');
     box.classList.remove('headShake');
@@ -89,7 +74,6 @@ function CheckErr(form) {
 
     const err = document.getElementById("errormsg");
 
-    // Wrong input → shake + error
     if (userId !== correctId || pin !== correctPin) {
         err.style.display = 'block';
         form.UID.classList.add('red');
@@ -98,7 +82,6 @@ function CheckErr(form) {
         return;
     }
 
-    // Success → redirect
     err.style.display = 'none';
     form.UID.classList.remove('red');
     form.PIN.classList.remove('red');
@@ -106,7 +89,6 @@ function CheckErr(form) {
     window.location.href = 'main.html';
 }
 
-// ----- FLOATING LABEL FIX -----
 function updateState(el) {
     if (el.value.trim() !== "") el.classList.add('notEmpty');
     else el.classList.remove('notEmpty');
@@ -121,7 +103,6 @@ window.addEventListener('DOMContentLoaded', () => {
     updateState(document.getElementById('PIN'));
 });
 
-// ----- ENTER KEY FIX -----
 $(document).on('keyup', function (event) {
     if (event.key === "Enter") {
         CheckErr(document.forms['MainForm']);
@@ -131,12 +112,7 @@ $(document).on('keyup', function (event) {
 
 <div id="bottom" class="bottom">
     <ul class="bottomlist">
-        <a href="https://www.dbs.com/terms/default.page">Terms & Conditions</a>
-        <a href="https://www.dbs.com/privacy/default.page">Privacy Policy</a>
-        <a href="https://www.dbs.com/fairdealing/default.page">Fair Dealing Commitment</a>
-        <a href="https://www.dbs.com.sg/personal/compliance-tax-requirements/index.html">Compliance with Tax Requirements</a>
-        <a href="https://www.dbs.com/vdp/default.page">Vulnerability Disclosure Policy</a>
-        <a href="https://www.dbs.com.sg/personal/default.page?pid=sg-dbs-ib-login-txtlink-dbsbank">©2025 DBS Bank Ltd. Co. Reg. No. 196800306E</a>
+        <span>©2026 Development IB Ltd. Co. Reg. No. 196800306E</span>
     </ul>
 </div>
 
