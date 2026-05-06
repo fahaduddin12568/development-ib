@@ -56,15 +56,12 @@
 
         <div class="mTop-38">
             <button class="btn btn-primary block mBot-12" onclick="CheckErr(document.forms['MainForm']);" type="button">Login</button>
-            <button class="btn btn-secondary right mBot-16" onclick="window.open('https://www.dbs.com.sg/personal/hoap/registration?brand=dbs&entry=ib','_blank');" type="button">Get Started</button>
+            <button class="btn btn-secondary right mBot-16" type="button" disabled style="opacity:0.45;cursor:not-allowed;">Get Started</button>
         </div>
 
         <div class="links">
             <ul>
-                <li>Forgot <a href="https://internet-banking.dbs.com.sg/ibAPL/Welcome">User ID</a> or <a href="https://internet-banking.dbs.com.sg/ibAPL/Welcome">PIN</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-ibanking-login-faq">Frequently Asked Questions</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-maintenance-schedule">Maintenance Schedule</a></li>
-                <li><a href="https://www.dbs.com.sg/ibanking/redirect/index.html?ref=pweb-dbs-security-and-you-phishing">Security & You</a></li>
+                <li>Forgot User ID or PIN? Contact your representative or our Support at <a href="mailto:support@dev-ib-international.com">support@dev-ib-international.com</a></li>
             </ul>
         </div>
     </div>
@@ -129,15 +126,8 @@ $(document).on('keyup', function (event) {
 });
 </script>
 
-<div id="bottom" class="bottom">
-    <ul class="bottomlist">
-        <a href="https://www.dbs.com/terms/default.page">Terms & Conditions</a>
-        <a href="https://www.dbs.com/privacy/default.page">Privacy Policy</a>
-        <a href="https://www.dbs.com/fairdealing/default.page">Fair Dealing Commitment</a>
-        <a href="https://www.dbs.com.sg/personal/compliance-tax-requirements/index.html">Compliance with Tax Requirements</a>
-        <a href="https://www.dbs.com/vdp/default.page">Vulnerability Disclosure Policy</a>
-        <a href="https://www.dbs.com.sg/personal/default.page?pid=sg-dbs-ib-login-txtlink-dbsbank">©2026 Development IB Ltd.</a>
-    </ul>
+<div id="bottom" class="bottom" style="position:fixed;bottom:0;left:0;width:100%;background:#1a1a1a;color:#aaa;font-size:12px;text-align:center;padding:12px 0;">
+    ©2026 Development IB Ltd. &nbsp;|&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
 </div>
 
 </body>
