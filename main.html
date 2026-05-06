@@ -6,8 +6,8 @@
 	<link rel="shortcut icon" href="images/dbs_logo_min1.png">
 	<link rel="stylesheet" href="css/main_style.css" />
 </head>
-<body>
-
+<body style="min-height:100vh;display:flex;flex-direction:column;">
+<div style="flex:1 0 auto;">
 	<div id="unavailableToast" class="unavail-toast">Not available for overseas account</div>
 
 	<!-- TOP HEADER BAR -->
@@ -179,8 +179,9 @@
 	</div>
 
 	<!-- FOOTER -->
-	<footer style="display:block;text-align:center;padding:14px 30px;font-size:12px;background:#2a2a2a;color:#aaa;">
-		©2026 Development IB Ltd. &nbsp;|&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
+	</div>
+	<footer style="display:block;text-align:center;padding:14px 30px;font-size:12px;background:#2a2a2a;color:#aaa;flex-shrink:0;white-space:nowrap;">
+		©2026 Development IB Ltd. &nbsp;&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
 	</footer>
 
 	<script src="js/db.js"></script>
