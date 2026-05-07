@@ -205,22 +205,39 @@
 		@media (max-width: 900px) {
 			.transfer-wrap {
 				grid-template-columns: 1fr;
-				padding: 0 16px;
-				margin: 16px auto 30px auto;
-				gap: 16px;
+				padding: 0 12px;
+				margin: 14px auto 30px auto;
+				gap: 14px;
+				box-sizing: border-box;
+				width: 100%;
 			}
-			.transfer-body { padding: 20px 18px; }
+			.transfer-form-panel { overflow: hidden; }
+			.transfer-body { padding: 16px 14px; box-sizing: border-box; }
+			.form-row { margin-bottom: 16px; }
+			.form-row select,
+			.form-row input[type="text"],
+			.form-row input[type="number"] {
+				width: 100%;
+				max-width: 100%;
+				box-sizing: border-box;
+			}
 			.form-row-inline { grid-template-columns: 1fr; gap: 0; }
 			.transfer-actions { flex-direction: column; }
-			.btn-primary-red, .btn-secondary-outline { width: 100%; justify-content: center; text-align: center; }
+			.btn-primary-red, .btn-secondary-outline { width: 100%; justify-content: center; text-align: center; box-sizing: border-box; }
 			.review-actions { flex-direction: column; }
+			.history-section { overflow-x: auto; }
 			.history-section .data-table { font-size: 12px; min-width: 420px; }
+			.transfer-steps { padding: 0 14px; overflow-x: auto; flex-wrap: nowrap; }
+			.step { white-space: nowrap; }
 		}
 		@media (max-width: 480px) {
-			.transfer-steps { padding: 0 12px; }
-			.step { padding: 10px 8px 10px 0; margin-right: 12px; font-size: 12px; }
-			.welcome-inner { padding: 14px 16px; }
-			.welcome-title { font-size: 17px; }
+			.transfer-wrap { padding: 0 8px; }
+			.transfer-body { padding: 14px 12px; }
+			.transfer-steps { padding: 0 10px; }
+			.step { padding: 10px 6px 10px 0; margin-right: 8px; font-size: 11px; }
+			.step-num { width: 18px; height: 18px; font-size: 10px; }
+			.welcome-inner { padding: 12px 12px; }
+			.welcome-title { font-size: 16px; }
 		}
 	</style>
 </head>
