@@ -839,3 +839,34 @@ iframe#iframe1.error-open {
         top: 200px;
     }
 }
+
+/* ---- MOBILE RESPONSIVE (login page) ---- */
+@media (max-width: 767px) {
+    .login-form {
+        float: none !important;
+        margin: 0 auto !important;
+        top: auto !important;
+        width: 90% !important;
+        max-width: 360px;
+        padding: 28px 24px !important;
+        margin-top: 80px !important;
+        position: relative;
+    }
+    .notification {
+        font-size: 12px;
+        padding: 8px 16px;
+    }
+    input[type="text"],
+    input[type="password"] {
+        width: 100% !important;
+        font-size: 15px;
+    }
+    .bottom {
+        top: auto;
+        bottom: 10px;
+        padding-left: 0;
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+}

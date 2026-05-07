@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>Development IB — Transfer Funds</title>
 	<link rel="shortcut icon" href="images/dbs_logo_min1.png">
 	<link rel="stylesheet" href="css/main_style.css" />
@@ -199,6 +200,28 @@
 		}
 		.success-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
 		.success-sub   { font-size: 14px; color: #666; margin-bottom: 28px; }
+
+		/* Mobile responsive */
+		@media (max-width: 900px) {
+			.transfer-wrap {
+				grid-template-columns: 1fr;
+				padding: 0 16px;
+				margin: 16px auto 30px auto;
+				gap: 16px;
+			}
+			.transfer-body { padding: 20px 18px; }
+			.form-row-inline { grid-template-columns: 1fr; gap: 0; }
+			.transfer-actions { flex-direction: column; }
+			.btn-primary-red, .btn-secondary-outline { width: 100%; justify-content: center; text-align: center; }
+			.review-actions { flex-direction: column; }
+			.history-section .data-table { font-size: 12px; min-width: 420px; }
+		}
+		@media (max-width: 480px) {
+			.transfer-steps { padding: 0 12px; }
+			.step { padding: 10px 8px 10px 0; margin-right: 12px; font-size: 12px; }
+			.welcome-inner { padding: 14px 16px; }
+			.welcome-title { font-size: 17px; }
+		}
 	</style>
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
@@ -228,6 +251,28 @@
 				<span class="user-id" id="headerUid">User ID: 655016554</span>
 			</div>
 			<a href="index.html" class="logout">Proceed to Logout</a>
+		</div>
+		<button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+			<span></span><span></span><span></span>
+		</button>
+	</div>
+
+	<!-- MOBILE NAV DRAWER -->
+	<div class="mobile-nav-drawer" id="mobileNavDrawer">
+		<div class="mobile-nav-section-label">Navigation</div>
+		<a href="main.html">Banking &mdash; Overview</a>
+		<a href="transfer.html" class="mobile-nav-active">Transfer &amp; Pay</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Cards</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Investments</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Loans</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">PayLah!</a>
+		<div class="mobile-nav-section-label">Account</div>
+		<div class="mobile-user-row">
+			<div>
+				<div class="mobile-user-name" id="mobileHeaderName">Loading...</div>
+				<div class="mobile-user-id" id="mobileHeaderUid"></div>
+			</div>
+			<a href="index.html" class="mobile-logout">Logout</a>
 		</div>
 	</div>
 
@@ -655,5 +700,28 @@
 		toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
 	}
 	</script>
+	// ---- Mobile user info & hamburger ----
+	(function() {
+		const user = DB.getUser();
+		const mn = document.getElementById('mobileHeaderName');
+		const mu = document.getElementById('mobileHeaderUid');
+		if (mn) mn.textContent = user.name;
+		if (mu) mu.textContent = 'User ID: ' + user.id;
+		const btn = document.getElementById('hamburgerBtn');
+		const drawer = document.getElementById('mobileNavDrawer');
+		if (!btn || !drawer) return;
+		btn.addEventListener('click', function(e) {
+			e.stopPropagation();
+			btn.classList.toggle('open');
+			drawer.classList.toggle('open');
+		});
+		document.addEventListener('click', function(e) {
+			if (!e.target.closest('#hamburgerBtn') && !e.target.closest('#mobileNavDrawer')) {
+				btn.classList.remove('open');
+				drawer.classList.remove('open');
+			}
+		});
+	})();
+
 </body>
 </html>

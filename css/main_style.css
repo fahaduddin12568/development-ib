@@ -580,3 +580,193 @@ footer a:hover { color: #fff; text-decoration: none; }
 
 /* Pending transfer color in recent activity */
 .txn-pending { color: #856404; }
+
+/* =============================================
+   MOBILE RESPONSIVE DESIGN
+   Breakpoints: 768px (tablet), 480px (mobile)
+============================================= */
+
+/* ---- HAMBURGER BUTTON ---- */
+.hamburger {
+	display: none;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 6px;
+	margin-left: auto;
+	flex-direction: column;
+	gap: 5px;
+	align-items: center;
+	justify-content: center;
+}
+
+.hamburger span {
+	display: block;
+	width: 22px;
+	height: 2px;
+	background: #fff;
+	border-radius: 2px;
+	transition: all 0.25s ease;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ---- MOBILE NAV DRAWER ---- */
+.mobile-nav-drawer {
+	display: none;
+	background: #222;
+	flex-direction: column;
+	overflow: hidden;
+	max-height: 0;
+	transition: max-height 0.3s ease;
+}
+
+.mobile-nav-drawer.open {
+	max-height: 500px;
+}
+
+.mobile-nav-drawer a,
+.mobile-nav-drawer .mobile-nav-section {
+	color: #ccc;
+	font-size: 14px;
+	text-decoration: none;
+	padding: 13px 20px;
+	border-bottom: 1px solid #333;
+	display: block;
+	transition: background 0.15s, color 0.15s;
+}
+
+.mobile-nav-drawer a:hover { background: #2e2e2e; color: #fff; text-decoration: none; }
+.mobile-nav-drawer .mobile-nav-active { color: #fff; font-weight: 600; }
+.mobile-nav-drawer .mobile-nav-inactive { color: #666; cursor: not-allowed; }
+.mobile-nav-drawer .mobile-nav-inactive:hover { background: none; color: #666; }
+
+.mobile-nav-section-label {
+	background: #1a1a1a;
+	color: #777;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	padding: 8px 20px;
+	border-bottom: 1px solid #333;
+}
+
+.mobile-user-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid #333;
+}
+
+.mobile-user-name { color: #fff; font-size: 13px; font-weight: 600; }
+.mobile-user-id   { color: #888; font-size: 11px; }
+
+.mobile-logout {
+	background: #c50000;
+	color: #fff !important;
+	font-weight: 600 !important;
+	border-radius: 3px;
+	padding: 6px 14px !important;
+	font-size: 13px !important;
+	border: none;
+}
+
+/* ---- TABLET (≤ 900px) ---- */
+@media (max-width: 900px) {
+	/* Header: hide desktop nav, show hamburger */
+	.top-nav { display: none; }
+	.top-right { display: none; }
+	.hamburger { display: flex; }
+	.mobile-nav-drawer { display: flex; }
+
+	.top {
+		padding: 0 16px;
+		height: 54px;
+	}
+	.top img { height: 28px; }
+
+	/* Sub-nav: scrollable row */
+	.sub-nav {
+		padding: 0 10px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		height: 40px;
+		flex-shrink: 0;
+	}
+	.sub-nav::-webkit-scrollbar { display: none; }
+	.sub-nav a { padding: 0 12px; white-space: nowrap; font-size: 12px; }
+
+	/* Welcome banner */
+	.welcome-inner { padding: 14px 16px; }
+	.welcome-title { font-size: 17px; }
+	.welcome-total-value { font-size: 22px; }
+
+	/* Alert banner */
+	.alert-banner { padding: 8px 16px; font-size: 12px; }
+
+	/* Cards: 2 columns on tablet */
+	.grid {
+		grid-template-columns: repeat(2, 1fr);
+		padding: 16px 16px 0 16px;
+		gap: 12px;
+	}
+
+	/* Main content: single column */
+	.content-area {
+		grid-template-columns: 1fr;
+		padding: 0 16px;
+		margin: 16px auto 30px auto;
+		gap: 16px;
+	}
+
+	/* Table: horizontal scroll */
+	.deposits-panel { overflow-x: auto; }
+	.data-table { min-width: 480px; font-size: 13px; }
+	.data-table thead th,
+	.data-table tbody td { padding: 9px 14px; }
+
+	/* Footer */
+	footer { padding: 20px 16px; gap: 16px; }
+}
+
+/* ---- MOBILE (≤ 480px) ---- */
+@media (max-width: 480px) {
+	/* Cards: 1 column on small screens */
+	.grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+	.card { padding: 14px 14px; }
+	.card h3 { font-size: 11px; }
+	.card-value { font-size: 16px; }
+
+	/* Welcome banner stacked */
+	.welcome-inner {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+	.welcome-total { text-align: left; }
+
+	/* Quick actions 2x2 stays but bigger tap targets */
+	.qa-btn { padding: 20px 8px; font-size: 11px; }
+	.qa-icon { font-size: 22px; }
+
+	/* Panel headers smaller */
+	.panel-header { padding: 12px 16px; }
+	.panel-header h2 { font-size: 14px; }
+
+	/* Footer single column */
+	footer { flex-direction: column; gap: 12px; }
+	footer div { min-width: unset; }
+
+	/* Toast: full width */
+	.unavail-toast {
+		width: calc(100% - 32px);
+		white-space: normal;
+		text-align: center;
+	}
+}

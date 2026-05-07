@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>Development IB Dashboard</title>
 	<link rel="shortcut icon" href="images/dbs_logo_min1.png">
 	<link rel="stylesheet" href="css/main_style.css" />
@@ -33,6 +34,28 @@
 				<span class="user-id" id="headerUid">User ID: 655016554</span>
 			</div>
 			<a href="index.html" class="logout">Proceed to Logout</a>
+		</div>
+		<button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+			<span></span><span></span><span></span>
+		</button>
+	</div>
+
+	<!-- MOBILE NAV DRAWER -->
+	<div class="mobile-nav-drawer" id="mobileNavDrawer">
+		<div class="mobile-nav-section-label">Navigation</div>
+		<a href="main.html" class="mobile-nav-active">Banking &mdash; Overview</a>
+		<a href="transfer.html">Transfer &amp; Pay</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Cards</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Investments</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">Loans</a>
+		<a href="#" class="mobile-nav-inactive" onclick="showUnavail(event)">PayLah!</a>
+		<div class="mobile-nav-section-label">Account</div>
+		<div class="mobile-user-row">
+			<div>
+				<div class="mobile-user-name" id="mobileHeaderName">Hironori Sugiyama</div>
+				<div class="mobile-user-id" id="mobileHeaderUid">User ID: 655016554</div>
+			</div>
+			<a href="index.html" class="mobile-logout">Logout</a>
 		</div>
 	</div>
 
@@ -291,6 +314,33 @@
 		clearTimeout(toastTimer);
 		toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
 	}
+
+	// ---- Mobile user info ----
+	(function() {
+		const user = DB.getUser();
+		const mn = document.getElementById('mobileHeaderName');
+		const mu = document.getElementById('mobileHeaderUid');
+		if (mn) mn.textContent = user.name;
+		if (mu) mu.textContent = 'User ID: ' + user.id;
+	})();
+
+	// ---- Hamburger toggle ----
+	(function() {
+		const btn = document.getElementById('hamburgerBtn');
+		const drawer = document.getElementById('mobileNavDrawer');
+		if (!btn || !drawer) return;
+		btn.addEventListener('click', function(e) {
+			e.stopPropagation();
+			btn.classList.toggle('open');
+			drawer.classList.toggle('open');
+		});
+		document.addEventListener('click', function(e) {
+			if (!e.target.closest('#hamburgerBtn') && !e.target.closest('#mobileNavDrawer')) {
+				btn.classList.remove('open');
+				drawer.classList.remove('open');
+			}
+		});
+	})();
 	</script>
 </body>
 </html>
