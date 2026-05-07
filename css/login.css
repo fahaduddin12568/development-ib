@@ -22,11 +22,18 @@ p {
     list-style-type: none
 }
 
+html {
+    height: 100%;
+}
+
 body {
-	 background-image: url('https://images.pexels.com/photos/13462169/pexels-photo-13462169.jpeg?cs=srgb&dl=pexels-anthony-peruda-304873880-13462169.jpg&fm=jpg');
-	background-size: cover;
-            background-position: center center; 
-            background-repeat: no-repeat;	
+    min-height: 100%;
+    min-height: 100dvh;
+    background-image: url('https://images.pexels.com/photos/13462169/pexels-photo-13462169.jpeg?cs=srgb&dl=pexels-anthony-peruda-304873880-13462169.jpg&fm=jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .notification {
@@ -842,15 +849,25 @@ iframe#iframe1.error-open {
 
 /* ---- MOBILE RESPONSIVE (login page) ---- */
 @media (max-width: 767px) {
+    /* Make the form wrapper fill the full screen so background shows everywhere */
+    form.MainForm {
+        min-height: 100dvh;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 16px 50px 16px;
+        box-sizing: border-box;
+    }
     .login-form {
         float: none !important;
         margin: 0 auto !important;
         top: auto !important;
-        width: 90% !important;
+        width: 100% !important;
         max-width: 360px;
         padding: 28px 24px !important;
-        margin-top: 80px !important;
         position: relative;
+        margin-top: 0 !important;
     }
     .notification {
         font-size: 12px;
@@ -862,8 +879,10 @@ iframe#iframe1.error-open {
         font-size: 15px;
     }
     .bottom {
+        position: fixed;
         top: auto;
         bottom: 10px;
+        left: 0;
         padding-left: 0;
         margin-left: 0;
         width: 100%;
