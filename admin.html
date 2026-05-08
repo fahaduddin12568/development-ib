@@ -598,15 +598,20 @@
 /* ============================================================
    AUTH — Admin session (stored in sessionStorage)
 ============================================================ */
-const ADMIN_SESSION_KEY = 'dbs_admin_authed';
+const ADMIN_SESSION_KEY = 'dbs_admin_token';
 
-// On load: hide app, check if already authed this session
-(function() {
+// On load: check if already authed this session
+(async function() {
 	document.getElementById('adminApp').style.display = 'none';
-	if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
-		document.getElementById('loginScreen').style.display = 'none';
-		document.getElementById('adminApp').style.display = 'flex';
-		refreshAll();
+	if (sessionStorage.getItem(ADMIN_SESSION_KEY)) {
+		const valid = await DB.validateAdminSession();
+		if (valid) {
+			document.getElementById('loginScreen').style.display = 'none';
+			document.getElementById('adminApp').style.display = 'flex';
+			refreshAll();
+			return;
+		}
+		sessionStorage.removeItem(ADMIN_SESSION_KEY);
 	}
 })();
 
@@ -614,22 +619,14 @@ async function adminLogin() {
 	const id   = document.getElementById('adminId').value.trim();
 	const pass = document.getElementById('adminPass').value.trim();
 
-	// Verify against Supabase admins table
-	let valid = false;
-	try {
-		const res = await fetch(
-			`${CONFIG.supabase.url}/rest/v1/admins?email=eq.${encodeURIComponent(id)}&limit=1`,
-			{ headers: { 'apikey': CONFIG.supabase.anonKey, 'Authorization': 'Bearer ' + CONFIG.supabase.anonKey } }
-		);
-		const rows = await res.json();
-		valid = rows.length > 0 && rows[0].password === pass;
-	} catch(e) {
-		// Fallback to config if Supabase unreachable
-		valid = (id === CONFIG.admin.email && pass === CONFIG.admin.password);
-	}
+	const btn = document.querySelector('.btn-admin-login');
+	if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
 
-	if (valid) {
-		sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+	const ok = await DB.adminLogin(id, pass).catch(() => false);
+
+	if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+
+	if (ok) {
 		document.getElementById('loginScreen').style.display = 'none';
 		document.getElementById('adminApp').style.display = 'flex';
 		document.getElementById('loginError').style.display = 'none';

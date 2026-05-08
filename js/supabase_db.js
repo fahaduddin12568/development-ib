@@ -1,6 +1,8 @@
 /* ================================================================
-   supabase_db.js — Supabase-backed data layer  (v2)
-   Requires: config.js loaded before this file
+   supabase_db.js — v3 (Edge Function secured)
+   All auth goes through Edge Functions using service role key.
+   The anon key is only used for non-sensitive data calls.
+   Requires: config.js loaded before this file.
 ================================================================ */
 
 const DB = (() => {
@@ -9,21 +11,22 @@ const DB = (() => {
     url:  CONFIG.supabase.url,
     key:  CONFIG.supabase.anonKey,
 
-    headers() {
+    headers(extra = {}) {
       return {
         'Content-Type':  'application/json',
         'apikey':        this.key,
         'Authorization': 'Bearer ' + this.key,
-        'Prefer':        'return=representation'
+        'Prefer':        'return=representation',
+        ...extra
       };
     },
 
+    // Direct REST — only used after RLS allows it (admin via service role edge fn)
     async get(table, params = '') {
       const r = await fetch(`${this.url}/rest/v1/${table}?${params}`, { headers: this.headers() });
       if (!r.ok) throw new Error(await r.text());
       return r.json();
     },
-
     async post(table, body) {
       const r = await fetch(`${this.url}/rest/v1/${table}`, {
         method: 'POST', headers: this.headers(), body: JSON.stringify(body)
@@ -31,7 +34,6 @@ const DB = (() => {
       if (!r.ok) throw new Error(await r.text());
       return r.json();
     },
-
     async patch(table, match, body) {
       const r = await fetch(`${this.url}/rest/v1/${table}?${match}`, {
         method: 'PATCH', headers: this.headers(), body: JSON.stringify(body)
@@ -39,26 +41,34 @@ const DB = (() => {
       if (!r.ok) throw new Error(await r.text());
       return r.json();
     },
-
     async delete(table, match) {
       const r = await fetch(`${this.url}/rest/v1/${table}?${match}`, {
         method: 'DELETE', headers: this.headers()
       });
       if (!r.ok) throw new Error(await r.text());
+    },
+
+    // Edge Function call
+    async fn(name, body = {}) {
+      const r = await fetch(`${this.url}/functions/v1/${name}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': this.key },
+        body: JSON.stringify(body)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Edge function error');
+      return data;
     }
   };
 
   /* ── Session helpers ─────────────────────────────────────────── */
   const SESSION_KEY = 'dbs_session_token';
+  function getSessionToken()      { return sessionStorage.getItem(SESSION_KEY); }
+  function setSessionToken(token) { sessionStorage.setItem(SESSION_KEY, token); }
+  function clearSessionToken()    { sessionStorage.removeItem(SESSION_KEY); }
 
-  function getSessionToken()       { return sessionStorage.getItem(SESSION_KEY); }
-  function setSessionToken(token)  { sessionStorage.setItem(SESSION_KEY, token); }
-  function clearSessionToken()     { sessionStorage.removeItem(SESSION_KEY); }
-
-  function _makeToken() {
-    return Array.from(crypto.getRandomValues(new Uint8Array(24)))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-  }
+  // Cache validated user for the page lifetime
+  let _cachedUser = null;
 
   /* ================================================================
      PUBLIC API
@@ -69,85 +79,83 @@ const DB = (() => {
        AUTH / SESSION
     ================================================================ */
 
-    /** Login: verify ID+PIN, create server-side session, return user or null */
+    /** Login: ID+PIN verified server-side. PIN never compared in browser. */
     async loginUser(id, pin) {
-      const rows = await SB.get('users', `id=eq.${encodeURIComponent(id)}&limit=1`);
-      const user = rows[0];
-      if (!user || user.pin !== pin) return null;
-
-      const token = _makeToken();
-      await SB.post('sessions', {
-        token,
-        user_id:    user.id,
-        expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
-      });
-      setSessionToken(token);
-      return user;
+      const data = await SB.fn('login', { id, pin }).catch(() => null);
+      if (!data || !data.token) return null;
+      setSessionToken(data.token);
+      _cachedUser = data.user; // safe object — no PIN
+      return data.user;
     },
 
-    /** Validate current session. Returns user or null. */
+    /** Validate session via Edge Function — returns safe user or null */
     async validateSession() {
+      if (_cachedUser) return _cachedUser;
       const token = getSessionToken();
       if (!token) return null;
-      const rows = await SB.get('sessions',
-        `token=eq.${token}&expires_at=gt.${new Date().toISOString()}&select=user_id,users(*)&limit=1`
-      ).catch(() => []);
-      if (!rows || !rows[0] || !rows[0].users) { clearSessionToken(); return null; }
-      return rows[0].users;
+      const data = await SB.fn('validate-session', { token }).catch(() => null);
+      if (!data || !data.user) { clearSessionToken(); return null; }
+      _cachedUser = data.user;
+      return data.user;
     },
 
-    /** Logout: delete session from DB and clear local token */
+    /** Logout: delete session server-side */
     async logout() {
       const token = getSessionToken();
-      if (token) await SB.delete('sessions', `token=eq.${token}`).catch(() => {});
+      if (token) await SB.fn('logout', { token }).catch(() => {});
       clearSessionToken();
+      _cachedUser = null;
     },
 
-    /** Guard: call on every protected page. Redirects to index.html if no valid session. */
+    /** Guard: redirects to index.html if no valid session */
     async requireAuth() {
       const user = await this.validateSession();
       if (!user) { window.location.href = 'index.html'; return null; }
       return user;
     },
 
-    /* ================================================================
-       USERS
-    ================================================================ */
-    async getUsers() {
-      return SB.get('users', 'order=created_at.asc');
+    /** Admin login: verified server-side, returns token or null */
+    async adminLogin(email, password) {
+      const data = await SB.fn('admin-login', { email, password }).catch(() => null);
+      if (!data || !data.token) return false;
+      sessionStorage.setItem('dbs_admin_token', data.token);
+      return true;
     },
 
-    async getUserById(id) {
-      const rows = await SB.get('users', `id=eq.${encodeURIComponent(id)}&limit=1`);
-      return rows[0] || null;
+    /** Admin session check */
+    async validateAdminSession() {
+      const token = sessionStorage.getItem('dbs_admin_token');
+      if (!token) return false;
+      // Admin tokens are prefixed "adm_" — validate via same endpoint
+      const data = await SB.fn('validate-session', { token }).catch(() => null);
+      // admin sessions have no user — just check the token was valid (no error thrown)
+      return !!data;
     },
 
     async getUser() {
       return this.validateSession();
     },
 
+    /* ================================================================
+       USERS  (admin only — all go through Edge Function proxy)
+    ================================================================ */
+    async getUsers() {
+      return SB.fn('admin-query', { action: 'getUsers' });
+    },
+    async getUserById(id) {
+      const data = await SB.fn('admin-query', { action: 'getUserById', id });
+      return data.user || null;
+    },
     async addUser(u) {
-      try {
-        const rows = await SB.post('users', u);
-        return rows[0] || true;
-      } catch (e) {
-        console.error('addUser:', e.message);
-        return false;
-      }
+      const data = await SB.fn('admin-query', { action: 'addUser', user: u }).catch(() => null);
+      return data ? (data.user || true) : false;
     },
-
     async updateUser(id, patch) {
-      try {
-        const rows = await SB.patch('users', `id=eq.${encodeURIComponent(id)}`, patch);
-        return rows[0] || true;
-      } catch (e) {
-        console.error('updateUser:', e.message);
-        return false;
-      }
+      const data = await SB.fn('admin-query', { action: 'updateUser', id, patch });
+      return data.user || true;
     },
-
     async deleteUser(id) {
-      await SB.delete('users', `id=eq.${encodeURIComponent(id)}`);
+      await SB.fn('admin-query', { action: 'deleteUser', id });
     },
 
     /* ================================================================
@@ -156,67 +164,23 @@ const DB = (() => {
     async getTransfers(uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
       if (!uid) return [];
-      return SB.get('transfers',
-        `user_id=eq.${encodeURIComponent(uid)}&order=created_at.desc`);
+      return SB.fn('admin-query', { action: 'getTransfers', uid });
     },
-
     async addTransfer(t, uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
-      const payload = {
-        user_id:        uid,
-        account:        t.account         || t.recipient_name || '',
-        recipient_name: t.recipient_name  || t.account        || '',
-        iban:           t.iban            || '',
-        swift:          t.swift           || '',
-        country:        t.country         || '',
-        currency:       t.currency        || 'EUR',
-        amount:         t.amount,
-        direction:      t.direction       || 'outgoing',
-        status:         t.status          || 'pending',
-        purpose:        t.purpose         || '',
-        remarks:        t.remarks         || '',
-        created_at:     t.created_at      || new Date().toISOString()
-      };
-      const rows = await SB.post('transfers', payload);
-      return rows[0];
+      const data = await SB.fn('admin-query', { action: 'addTransfer', uid, transfer: t });
+      return data.transfer || data;
     },
-
     async updateTransfer(id, patch) {
-      // Map camelCase fields that may come from old code
       if (patch.createdAt) { patch.created_at = patch.createdAt; delete patch.createdAt; }
-      if (patch.recipientName) { patch.recipient_name = patch.recipientName; delete patch.recipientName; }
-      const rows = await SB.patch('transfers', `id=eq.${id}`, patch);
-      return rows[0];
+      const data = await SB.fn('admin-query', { action: 'updateTransfer', id, patch });
+      return data.transfer || data;
     },
-
     async deleteTransfer(id) {
-      await SB.delete('transfers', `id=eq.${id}`);
+      await SB.fn('admin-query', { action: 'deleteTransfer', id });
     },
-
-    /**
-     * Approve a transfer: set status=completed and deduct from user balance.
-     * Reject: set status=failed, no balance change.
-     */
     async resolveTransfer(id, status, uid) {
-      const transfer = (await SB.get('transfers', `id=eq.${id}&limit=1`))[0];
-      if (!transfer) return;
-
-      await this.updateTransfer(id, { status });
-
-      if (status === 'completed' && transfer.direction === 'outgoing') {
-        const user = await this.getUserById(uid || transfer.user_id);
-        if (user) {
-          const newBalance = Math.max(0, parseFloat(user.balance) - parseFloat(transfer.amount));
-          await this.updateUser(user.id, { balance: newBalance });
-        }
-      }
-      if (status === 'completed' && transfer.direction === 'incoming') {
-        const user = await this.getUserById(uid || transfer.user_id);
-        if (user) {
-          const newBalance = parseFloat(user.balance) + parseFloat(transfer.amount);
-          await this.updateUser(user.id, { balance: newBalance });
-        }
-      }
+      await SB.fn('admin-query', { action: 'resolveTransfer', id, status, uid });
     },
 
     /* ================================================================
@@ -225,43 +189,26 @@ const DB = (() => {
     async getNotifications(uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
       if (!uid) return [];
-      return SB.get('notifications',
-        `user_id=eq.${encodeURIComponent(uid)}&order=created_at.desc`);
+      return SB.fn('admin-query', { action: 'getNotifications', uid });
     },
-
     async addNotification(n, uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
-      const rows = await SB.post('notifications', {
-        user_id:    uid,
-        message:    n.message,
-        read:       false,
-        created_at: new Date().toISOString()
-      });
-      return rows[0];
+      const data = await SB.fn('admin-query', { action: 'addNotification', uid, notification: n });
+      return data.notification || data;
     },
-
     async markNotificationsRead(uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
       if (!uid) return;
-      await SB.patch('notifications',
-        `user_id=eq.${encodeURIComponent(uid)}&read=eq.false`,
-        { read: true });
+      await SB.fn('admin-query', { action: 'markNotificationsRead', uid });
     },
-
     async deleteNotification(id) {
-      await SB.delete('notifications', `id=eq.${id}`);
+      await SB.fn('admin-query', { action: 'deleteNotification', id });
     },
-
     async unreadCount(uid) {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
       if (!uid) return 0;
-      const r = await fetch(
-        `${SB.url}/rest/v1/notifications?user_id=eq.${encodeURIComponent(uid)}&read=eq.false&select=id`,
-        { headers: { ...SB.headers(), 'Prefer': 'count=exact' } }
-      );
-      const count = r.headers.get('Content-Range');
-      if (!count) return 0;
-      return parseInt(count.split('/')[1]) || 0;
+      const data = await SB.fn('admin-query', { action: 'unreadCount', uid }).catch(() => ({ count: 0 }));
+      return data.count || 0;
     },
 
     /* ================================================================
@@ -272,7 +219,6 @@ const DB = (() => {
         minimumFractionDigits: 2, maximumFractionDigits: 2
       });
     },
-
     fmtDate(iso) {
       const d = new Date(iso);
       return d.toLocaleDateString('en-GB', {
