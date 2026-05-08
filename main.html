@@ -33,7 +33,7 @@
 				<span class="user-name" id="headerName">Hironori Sugiyama</span>
 				<span class="user-id" id="headerUid">User ID: 655016554</span>
 			</div>
-			<a href="index.html" class="logout">Proceed to Logout</a>
+			<a href="index.html?logout=1" class="logout">Proceed to Logout</a>
 		</div>
 		<button class="hamburger" id="hamburgerBtn" aria-label="Menu">
 			<span></span><span></span><span></span>
@@ -55,7 +55,7 @@
 				<div class="mobile-user-name" id="mobileHeaderName">Hironori Sugiyama</div>
 				<div class="mobile-user-id" id="mobileHeaderUid">User ID: 655016554</div>
 			</div>
-			<a href="index.html" class="mobile-logout">Logout</a>
+			<a href="index.html?logout=1" class="mobile-logout">Logout</a>
 		</div>
 	</div>
 
@@ -210,14 +210,23 @@
 	<script src="js/config.js"></script>
 	<script src="js/supabase_db.js"></script>
 	<script>
-	// ---- Populate from DB ----
-	(async function() {
-		const user = await DB.getUser();
+	// ---- Auth guard ----
+	(async () => {
+		const user = await DB.requireAuth();
+		if (!user) return;
+		await initPage(user);
+	})();
+
+	async function initPage(user) {
 		document.getElementById('welcomeName').textContent = user.name;
 		document.getElementById('headerName').textContent = user.name;
 		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
 		document.getElementById('cardBalance').textContent = DB.fmt(user.balance) + ' ' + user.currency;
 		document.getElementById('totalNetWorth').textContent = DB.fmt(user.balance) + ' ' + user.currency;
+		const mn = document.getElementById('mobileHeaderName');
+		const mu = document.getElementById('mobileHeaderUid');
+		if (mn) mn.textContent = user.name;
+		if (mu) mu.textContent = 'User ID: ' + user.id;
 
 		// Transaction History
 		const allTransfers = await DB.getTransfers();
@@ -238,7 +247,7 @@
 					? '<span style="color:#c50000;">Failed</span>'
 					: '<span style="color:#f5a623;">Pending</span>';
 				return `<tr>
-					<td class="td-bold">${t.recipientName || t.account || '—'}</td>
+					<td class="td-bold">${t.recipient_name || t.account || '—'}</td>
 					<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
 					<td>${t.currency}</td>
 					<td>${typeLabel}</td>
@@ -262,13 +271,15 @@
 			ul.innerHTML += `
 			<li class="txn-item">
 				<div class="txn-details">
-					<span class="txn-name">${t.recipientName || t.account || '—'}</span>
+					<span class="txn-name">${t.recipient_name || t.account || '—'}</span>
 					<span class="txn-date">${DB.fmtDate(t.created_at)}${statusLabel}</span>
 				</div>
 				<span class="txn-amount ${statusClass}" style="${amtStyle}">${amtPrefix}${DB.fmt(t.amount)} ${t.currency}</span>
 			</li>`;
 		});
-	})();
+
+		await renderNotifications();
+	} // end initPage
 
 	// ---- Notifications ----
 	async function renderNotifications() {
@@ -317,13 +328,7 @@
 	}
 
 	// ---- Mobile user info ----
-	(async function() {
-		const user = await DB.getUser();
-		const mn = document.getElementById('mobileHeaderName');
-		const mu = document.getElementById('mobileHeaderUid');
-		if (mn) mn.textContent = user.name;
-		if (mu) mu.textContent = 'User ID: ' + user.id;
-	})();
+	// (populated by initPage via auth guard)
 
 	// ---- Hamburger toggle ----
 	(function() {

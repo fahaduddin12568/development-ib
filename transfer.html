@@ -267,7 +267,7 @@
 				<span class="user-name" id="headerName">Hironori Sugiyama</span>
 				<span class="user-id" id="headerUid">User ID: 655016554</span>
 			</div>
-			<a href="index.html" class="logout">Proceed to Logout</a>
+			<a href="index.html?logout=1" class="logout">Proceed to Logout</a>
 		</div>
 		<button class="hamburger" id="hamburgerBtn" aria-label="Menu">
 			<span></span><span></span><span></span>
@@ -289,7 +289,7 @@
 				<div class="mobile-user-name" id="mobileHeaderName">Loading...</div>
 				<div class="mobile-user-id" id="mobileHeaderUid"></div>
 			</div>
-			<a href="index.html" class="mobile-logout">Logout</a>
+			<a href="index.html?logout=1" class="mobile-logout">Logout</a>
 		</div>
 	</div>
 
@@ -510,15 +510,22 @@
 	<script src="js/config.js"></script>
 	<script src="js/supabase_db.js"></script>
 	<script>
-	/* ---- Populate header from DB ---- */
+	/* ---- Auth guard ---- */
 	let _user = null;
 	async function loadUser() {
-		_user = await DB.getUser();
+		_user = await DB.requireAuth();
+		if (!_user) return;
 		document.getElementById('headerName').textContent = _user.name;
 		document.getElementById('headerUid').textContent = 'User ID: ' + _user.id;
 		document.getElementById('fromAcctName').textContent = _user.account + ' — ' + _user.currency + ' Investment Account';
 		document.getElementById('availBal').textContent = DB.fmt(_user.balance) + ' ' + _user.currency;
 		document.getElementById('balAlertAmt').textContent = DB.fmt(_user.balance) + ' ' + _user.currency;
+		const mn = document.getElementById('mobileHeaderName');
+		const mu = document.getElementById('mobileHeaderUid');
+		if (mn) mn.textContent = _user.name;
+		if (mu) mu.textContent = 'User ID: ' + _user.id;
+		await renderHistory();
+		await renderNotifications();
 	}
 	loadUser();
 
@@ -684,7 +691,6 @@
 			</tr>`;
 		}).join('');
 	}
-	renderHistory();
 
 	/* ---- Notifications ---- */
 	async function renderNotifications() {
@@ -698,7 +704,6 @@
 			? '<li class="notif-empty">No notifications</li>'
 			: notes.map(n => `<li class="notif-item ${n.read?'':'notif-unread'}"><div class="notif-msg">${n.message}</div><div class="notif-time">${DB.fmtDate(n.created_at)}</div></li>`).join('');
 	}
-	renderNotifications();
 
 	document.getElementById("notifBell").onclick = async function (e) {
 		e.stopPropagation();
@@ -721,13 +726,8 @@
 		toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
 	}
 
-	// ---- Mobile user info & hamburger ----
-	(async function() {
-		const user = await DB.getUser();
-		const mn = document.getElementById('mobileHeaderName');
-		const mu = document.getElementById('mobileHeaderUid');
-		if (mn) mn.textContent = user.name;
-		if (mu) mu.textContent = 'User ID: ' + user.id;
+	// ---- Hamburger toggle ----
+	(function() {
 		const btn = document.getElementById('hamburgerBtn');
 		const drawer = document.getElementById('mobileNavDrawer');
 		if (!btn || !drawer) return;

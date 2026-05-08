@@ -18,6 +18,13 @@
     <!-- DB -->
     <script src="js/config.js"></script>
     <script src="js/supabase_db.js"></script>
+    <script>
+    // If already have a valid session, skip login
+    (async () => {
+      const user = await DB.validateSession();
+      if (user) window.location.href = 'main.html';
+    })();
+    </script>
 
     <!-- Validation -->
     <script src="js/client_validation.js"></script>
@@ -107,6 +114,12 @@ async function CheckErr(form) {
     form.PIN.classList.remove('red');
     window.location.href = 'main.html';
 }
+
+// Called by logout links on other pages (index.html is the logout destination)
+(async () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('logout') === '1') await DB.logout();
+})();
 
 // ----- FLOATING LABEL FIX -----
 function updateState(el) {

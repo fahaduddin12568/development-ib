@@ -883,9 +883,10 @@ async function renderTransfers() {
 }
 
 async function setTxStatus(id, status, uid) {
-	await DB.updateTransfer(id, { status });
+	await DB.resolveTransfer(id, status, uid);
 	renderTransfers();
 	renderDashboard();
+	renderUsers(); // refresh balances
 	toast('Transfer marked as ' + status + '.');
 }
 
