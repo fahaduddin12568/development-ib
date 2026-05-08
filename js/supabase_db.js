@@ -126,10 +126,8 @@ const DB = (() => {
     async validateAdminSession() {
       const token = sessionStorage.getItem('dbs_admin_token');
       if (!token) return false;
-      // Admin tokens are prefixed "adm_" — validate via same endpoint
       const data = await SB.fn('validate-session', { token }).catch(() => null);
-      // admin sessions have no user — just check the token was valid (no error thrown)
-      return !!data;
+      return !!(data && data.admin === true);
     },
 
     async getUser() {
