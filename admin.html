@@ -972,12 +972,12 @@ async function adminAddTransfer() {
 
 	const dateVal = document.getElementById('at-date').value;
 	const entry = {
-		account:      document.getElementById('at-account').value.trim() || (u ? u.account : ''),
-		currency:     document.getElementById('at-currency').value,
-		amount:       amt,
-		direction:    document.getElementById('at-direction').value,
-		status:       document.getElementById('at-status').value,
-		recipientName: document.getElementById('at-account').value.trim() || (u ? u.account : ''),
+		account:       document.getElementById('at-account').value.trim() || (u ? u.account : ''),
+		currency:      document.getElementById('at-currency').value,
+		amount:        amt,
+		direction:     document.getElementById('at-direction').value,
+		status:        document.getElementById('at-status').value,
+		recipient_name: document.getElementById('at-account').value.trim() || (u ? u.account : ''),
 	};
 	if (dateVal) entry.created_at = new Date(dateVal + 'T12:00:00').toISOString();
 

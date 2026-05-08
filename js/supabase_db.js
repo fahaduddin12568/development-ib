@@ -164,18 +164,18 @@ const DB = (() => {
       if (!uid) { const u = await this.getUser(); uid = u && u.id; }
       const payload = {
         user_id:        uid,
-        account:        t.account        || t.recipientName || '',
-        recipient_name: t.recipientName  || t.account       || '',
-        iban:           t.iban           || '',
-        swift:          t.swift          || '',
-        country:        t.country        || '',
-        currency:       t.currency       || 'EUR',
+        account:        t.account         || t.recipient_name || '',
+        recipient_name: t.recipient_name  || t.account        || '',
+        iban:           t.iban            || '',
+        swift:          t.swift           || '',
+        country:        t.country         || '',
+        currency:       t.currency        || 'EUR',
         amount:         t.amount,
-        direction:      t.direction      || 'outgoing',
-        status:         t.status         || 'pending',
-        purpose:        t.purpose        || '',
-        remarks:        t.remarks        || '',
-        created_at:     t.created_at     || new Date().toISOString()
+        direction:      t.direction       || 'outgoing',
+        status:         t.status          || 'pending',
+        purpose:        t.purpose         || '',
+        remarks:        t.remarks         || '',
+        created_at:     t.created_at      || new Date().toISOString()
       };
       const rows = await SB.post('transfers', payload);
       return rows[0];

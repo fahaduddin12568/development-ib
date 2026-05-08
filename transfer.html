@@ -650,7 +650,7 @@
 		const remarks = document.getElementById('remarks').value.trim() || '';
 
 		await DB.addTransfer({
-			recipientName: name,
+			recipient_name: name,
 			iban, swift, country,
 			amount: amt, currency: ccy,
 			purpose, remarks,
@@ -705,7 +705,7 @@
 				: `<span class="badge-pending">Pending</span>`;
 			return `<tr>
 				<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
-				<td class="td-bold">${t.recipientName || t.beneficiary || '—'}</td>
+				<td class="td-bold">${t.recipient_name || t.account || '—'}</td>
 				<td>${t.country || '—'}</td>
 				<td>${t.purpose || '—'}</td>
 				<td class="text-right td-bold" style="color:#c50000;">-${DB.fmt(t.amount)} ${t.currency}</td>
