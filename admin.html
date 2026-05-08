@@ -596,14 +596,43 @@
 <script src="js/supabase_db.js"></script>
 <script>
 /* ============================================================
-   AUTH
+   AUTH — Admin session (stored in sessionStorage)
 ============================================================ */
-function adminLogin() {
-	const id   = document.getElementById('adminId').value.trim();
-	const pass = document.getElementById('adminPass').value.trim();
-	if (id === CONFIG.admin.email && pass === CONFIG.admin.password) {
+const ADMIN_SESSION_KEY = 'dbs_admin_authed';
+
+// On load: hide app, check if already authed this session
+(function() {
+	document.getElementById('adminApp').style.display = 'none';
+	if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
 		document.getElementById('loginScreen').style.display = 'none';
 		document.getElementById('adminApp').style.display = 'flex';
+		refreshAll();
+	}
+})();
+
+async function adminLogin() {
+	const id   = document.getElementById('adminId').value.trim();
+	const pass = document.getElementById('adminPass').value.trim();
+
+	// Verify against Supabase admins table
+	let valid = false;
+	try {
+		const res = await fetch(
+			`${CONFIG.supabase.url}/rest/v1/admins?email=eq.${encodeURIComponent(id)}&limit=1`,
+			{ headers: { 'apikey': CONFIG.supabase.anonKey, 'Authorization': 'Bearer ' + CONFIG.supabase.anonKey } }
+		);
+		const rows = await res.json();
+		valid = rows.length > 0 && rows[0].password === pass;
+	} catch(e) {
+		// Fallback to config if Supabase unreachable
+		valid = (id === CONFIG.admin.email && pass === CONFIG.admin.password);
+	}
+
+	if (valid) {
+		sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+		document.getElementById('loginScreen').style.display = 'none';
+		document.getElementById('adminApp').style.display = 'flex';
+		document.getElementById('loginError').style.display = 'none';
 		refreshAll();
 	} else {
 		document.getElementById('loginError').style.display = 'block';
@@ -613,6 +642,7 @@ document.addEventListener('keydown', e => {
 	if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') adminLogin();
 });
 function adminLogout() {
+	sessionStorage.removeItem(ADMIN_SESSION_KEY);
 	document.getElementById('adminApp').style.display = 'none';
 	document.getElementById('loginScreen').style.display = 'flex';
 	document.getElementById('adminId').value  = '';

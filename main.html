@@ -8,6 +8,8 @@
 	<link rel="stylesheet" href="css/main_style.css" />
 </head>
 <body style="min-height:100vh;display:flex;flex-direction:column;">
+<div id="pageLoader"><div class="loader-spinner"></div></div>
+<div id="dbError"></div>
 <div style="flex:1 0 auto;">
 	<div id="unavailableToast" class="unavail-toast">Not available for overseas account</div>
 
@@ -207,17 +209,42 @@
 		©2026 Development IB Ltd. &nbsp;&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
 	</footer>
 
+	<style>
+	#pageLoader {
+		position:fixed; inset:0; background:#f0f0f0;
+		display:flex; align-items:center; justify-content:center;
+		z-index:9999; transition:opacity 0.25s;
+	}
+	#pageLoader.hidden { opacity:0; pointer-events:none; }
+	.loader-spinner {
+		width:36px; height:36px; border:3px solid #ddd;
+		border-top-color:#c50000; border-radius:50%;
+		animation:spin 0.7s linear infinite;
+	}
+	@keyframes spin { to { transform:rotate(360deg); } }
+	#dbError {
+		display:none; background:#c50000; color:#fff;
+		padding:10px 20px; font-size:13px; text-align:center;
+	}
+	</style>
 	<script src="js/config.js"></script>
 	<script src="js/supabase_db.js"></script>
 	<script>
 	// ---- Auth guard ----
 	(async () => {
-		const user = await DB.requireAuth();
+		const user = await DB.requireAuth().catch(() => null);
 		if (!user) return;
-		await initPage(user);
+		await initPage(user).catch(err => {
+			document.getElementById('pageLoader').classList.add('hidden');
+			const el = document.getElementById('dbError');
+			el.style.display = 'block';
+			el.textContent = 'Unable to load data. Please refresh or contact support.';
+			console.error(err);
+		});
 	})();
 
 	async function initPage(user) {
+		document.getElementById('pageLoader').classList.add('hidden');
 		document.getElementById('welcomeName').textContent = user.name;
 		document.getElementById('headerName').textContent = user.name;
 		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
