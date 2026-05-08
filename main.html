@@ -207,11 +207,12 @@
 		©2026 Development IB Ltd. &nbsp;&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
 	</footer>
 
-	<script src="js/db.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase_db.js"></script>
 	<script>
 	// ---- Populate from DB ----
-	(function() {
-		const user = DB.getUser();
+	(async function() {
+		const user = await DB.getUser();
 		document.getElementById('welcomeName').textContent = user.name;
 		document.getElementById('headerName').textContent = user.name;
 		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
@@ -219,7 +220,7 @@
 		document.getElementById('totalNetWorth').textContent = DB.fmt(user.balance) + ' ' + user.currency;
 
 		// Transaction History
-		const allTransfers = DB.getTransfers();
+		const allTransfers = await DB.getTransfers();
 		const tbody = document.getElementById('txHistoryBody');
 		if (allTransfers.length === 0) {
 			tbody.innerHTML = '<tr><td colspan="6" class="td-muted" style="text-align:center;padding:20px;">No transactions yet</td></tr>';
@@ -238,7 +239,7 @@
 					: '<span style="color:#f5a623;">Pending</span>';
 				return `<tr>
 					<td class="td-bold">${t.recipientName || t.account || '—'}</td>
-					<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+					<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
 					<td>${t.currency}</td>
 					<td>${typeLabel}</td>
 					<td class="text-right td-bold" style="color:${amtColor};">${amtPrefix}${DB.fmt(t.amount)}</td>
@@ -248,7 +249,7 @@
 		}
 
 		// Recent activity from transfers
-		const transfers = DB.getTransfers().slice(0, 5);
+		const transfers = allTransfers.slice(0, 5);
 		const ul = document.getElementById('recentActivity');
 		if (transfers.length === 0) return;
 		ul.innerHTML = '';
@@ -262,7 +263,7 @@
 			<li class="txn-item">
 				<div class="txn-details">
 					<span class="txn-name">${t.recipientName || t.account || '—'}</span>
-					<span class="txn-date">${DB.fmtDate(t.createdAt)}${statusLabel}</span>
+					<span class="txn-date">${DB.fmtDate(t.created_at)}${statusLabel}</span>
 				</div>
 				<span class="txn-amount ${statusClass}" style="${amtStyle}">${amtPrefix}${DB.fmt(t.amount)} ${t.currency}</span>
 			</li>`;
@@ -270,11 +271,11 @@
 	})();
 
 	// ---- Notifications ----
-	function renderNotifications() {
-		const notes = DB.getNotifications();
+	async function renderNotifications() {
+		const notes = await DB.getNotifications();
 		const badge = document.getElementById('notifBadge');
 		const ul = document.getElementById('notifList');
-		const unread = DB.unreadCount();
+		const unread = await DB.unreadCount();
 		badge.style.display = unread > 0 ? 'flex' : 'none';
 		badge.textContent = unread;
 		if (notes.length === 0) {
@@ -284,21 +285,21 @@
 		ul.innerHTML = notes.map(n => `
 			<li class="notif-item ${n.read ? '' : 'notif-unread'}">
 				<div class="notif-msg">${n.message}</div>
-				<div class="notif-time">${DB.fmtDate(n.createdAt)}</div>
+				<div class="notif-time">${DB.fmtDate(n.created_at)}</div>
 			</li>`).join('');
 	}
 	renderNotifications();
 
-	document.getElementById("notifBell").onclick = function (e) {
+	document.getElementById("notifBell").onclick = async function (e) {
 		e.stopPropagation();
 		const popup = document.getElementById("notifPopup");
 		const isVisible = popup.style.display === "block";
 		popup.style.display = isVisible ? "none" : "block";
-		if (!isVisible) { DB.markNotificationsRead(); renderNotifications(); }
+		if (!isVisible) { await DB.markNotificationsRead(); renderNotifications(); }
 	};
-	document.getElementById('notifMarkRead').onclick = function(e) {
+	document.getElementById('notifMarkRead').onclick = async function(e) {
 		e.stopPropagation();
-		DB.markNotificationsRead();
+		await DB.markNotificationsRead();
 		renderNotifications();
 	};
 	document.addEventListener('click', function(e) {
@@ -316,8 +317,8 @@
 	}
 
 	// ---- Mobile user info ----
-	(function() {
-		const user = DB.getUser();
+	(async function() {
+		const user = await DB.getUser();
 		const mn = document.getElementById('mobileHeaderName');
 		const mu = document.getElementById('mobileHeaderUid');
 		if (mn) mn.textContent = user.name;

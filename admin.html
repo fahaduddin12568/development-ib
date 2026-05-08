@@ -630,7 +630,6 @@ function showPage(name) {
 	document.querySelectorAll('.admin-nav-item').forEach(n => {
 		if ((n.getAttribute('onclick') || '').includes("'" + name + "'")) n.classList.add('active');
 	});
-	// Populate user selectors whenever a page with one is shown
 	populateUserSelects();
 	refreshAll();
 }
@@ -657,10 +656,10 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 });
 
 /* ============================================================
-   USER SELECTORS — populate dropdowns across pages
+   USER SELECTORS
 ============================================================ */
-function populateUserSelects() {
-	const users = DB.getUsers();
+async function populateUserSelects() {
+	const users = await DB.getUsers();
 	const ids = ['tx-user-select', 'at-user-select', 'notif-user-select'];
 	ids.forEach(sid => {
 		const sel = document.getElementById(sid);
@@ -671,7 +670,6 @@ function populateUserSelects() {
 		).join('');
 		if (prev && users.find(u => u.id === prev)) sel.value = prev;
 	});
-	// Auto-fill account name in Add Transfer when user changes
 	const atSel = document.getElementById('at-user-select');
 	if (atSel) {
 		atSel.onchange = function() { fillAtAccount(); };
@@ -679,9 +677,9 @@ function populateUserSelects() {
 	}
 }
 
-function fillAtAccount() {
+async function fillAtAccount() {
 	const uid = document.getElementById('at-user-select').value;
-	const u = DB.getUserById(uid);
+	const u = await DB.getUserById(uid);
 	if (u) {
 		document.getElementById('at-account').value  = u.account;
 		document.getElementById('at-currency').value = u.currency;
@@ -701,26 +699,26 @@ function refreshAll() {
 /* ============================================================
    DASHBOARD
 ============================================================ */
-function renderDashboard() {
-	const users = DB.getUsers();
+async function renderDashboard() {
+	const users = await DB.getUsers();
 	let totalTx = 0, pending = 0, unread = 0;
-	users.forEach(u => {
-		const txs = DB.getTransfers(u.id);
+	for (const u of users) {
+		const txs = await DB.getTransfers(u.id);
 		totalTx += txs.length;
 		pending += txs.filter(t => t.status === 'pending').length;
-		unread  += DB.unreadCount(u.id);
-	});
+		unread  += await DB.unreadCount(u.id);
+	}
 	document.getElementById('stat-users').textContent   = users.length;
 	document.getElementById('stat-txcount').textContent = totalTx;
 	document.getElementById('stat-pending').textContent = pending;
 	document.getElementById('stat-notifs').textContent  = unread;
 
-	// Recent transfers — collect all, sort by date desc, take 6
 	let all = [];
-	users.forEach(u => {
-		DB.getTransfers(u.id).forEach(t => all.push({ ...t, _userName: u.name, _userAccount: u.account }));
-	});
-	all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+	for (const u of users) {
+		const txs = await DB.getTransfers(u.id);
+		txs.forEach(t => all.push({ ...t, _userName: u.name, _userAccount: u.account }));
+	}
+	all.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 	const tbody = document.getElementById('dash-tx-body');
 	if (all.length === 0) {
 		tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transfers yet</td></tr>';
@@ -728,7 +726,7 @@ function renderDashboard() {
 	}
 	tbody.innerHTML = all.slice(0, 6).map(t => `
 		<tr>
-			<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+			<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
 			<td class="td-bold">${t._userName}</td>
 			<td>${t._userAccount || t.account || '—'}</td>
 			<td>${t.currency}</td>
@@ -740,8 +738,8 @@ function renderDashboard() {
 /* ============================================================
    USERS LIST
 ============================================================ */
-function renderUsers() {
-	const users = DB.getUsers();
+async function renderUsers() {
+	const users = await DB.getUsers();
 	const tbody = document.getElementById('users-body');
 	if (users.length === 0) {
 		tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users yet</td></tr>';
@@ -764,7 +762,7 @@ function renderUsers() {
 }
 
 /* ---- Add User ---- */
-function adminAddUser() {
+async function adminAddUser() {
 	const name    = document.getElementById('au-name').value.trim();
 	const id      = document.getElementById('au-id').value.trim();
 	const pin     = document.getElementById('au-pin').value.trim();
@@ -774,7 +772,7 @@ function adminAddUser() {
 
 	if (!name || !id || !pin || !account) { toast('All fields except balance are required.', true); return; }
 
-	const ok = DB.addUser({ id, pin, name, account, currency: ccy, balance: bal });
+	const ok = await DB.addUser({ id, pin, name, account, currency: ccy, balance: bal });
 	if (!ok) { toast('User ID already exists. Choose a different ID.', true); return; }
 
 	clearAddUser();
@@ -791,8 +789,8 @@ function clearAddUser() {
 }
 
 /* ---- Edit User Modal ---- */
-function openEditUser(id) {
-	const u = DB.getUserById(id);
+async function openEditUser(id) {
+	const u = await DB.getUserById(id);
 	if (!u) return;
 	document.getElementById('eu-orig-id').value  = u.id;
 	document.getElementById('eu-name').value     = u.name;
@@ -803,18 +801,17 @@ function openEditUser(id) {
 	document.getElementById('eu-balance').value  = u.balance;
 	document.getElementById('editUserModal').classList.add('open');
 }
-function saveEditUser() {
+async function saveEditUser() {
 	const origId = document.getElementById('eu-orig-id').value;
 	const patch = {
+		name:     document.getElementById('eu-name').value.trim(),
 		id:       document.getElementById('eu-id').value.trim(),
 		pin:      document.getElementById('eu-pin').value.trim(),
-		name:     document.getElementById('eu-name').value.trim(),
 		account:  document.getElementById('eu-account').value.trim(),
 		currency: document.getElementById('eu-currency').value,
 		balance:  parseFloat(document.getElementById('eu-balance').value) || 0
 	};
-	if (!patch.name || !patch.id || !patch.pin || !patch.account) { toast('All fields required.', true); return; }
-	DB.updateUser(origId, patch);
+	await DB.updateUser(origId, patch);
 	closeModal('editUserModal');
 	populateUserSelects();
 	renderUsers();
@@ -823,10 +820,10 @@ function saveEditUser() {
 }
 
 /* ---- Delete User ---- */
-function deleteUser(id) {
-	const u = DB.getUserById(id);
+async function deleteUser(id) {
+	const u = await DB.getUserById(id);
 	if (!confirm('Delete user "' + (u ? u.name : id) + '" and all their data?')) return;
-	DB.deleteUser(id);
+	await DB.deleteUser(id);
 	populateUserSelects();
 	renderUsers();
 	renderDashboard();
@@ -844,15 +841,16 @@ function badgeHtml(status) {
 
 function getSelectedTxUser() {
 	const sel = document.getElementById('tx-user-select');
-	return sel ? sel.value : (DB.getUser() || {}).id;
+	return sel ? sel.value : null;
 }
 
-function renderTransfers() {
+async function renderTransfers() {
 	const uid = getSelectedTxUser();
-	const u = DB.getUserById(uid);
-	const transfers = uid ? DB.getTransfers(uid) : [];
 	const tbody = document.getElementById('transfers-body');
 	if (!tbody) return;
+	if (!uid) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Select a user above</td></tr>'; return; }
+	const u = await DB.getUserById(uid);
+	const transfers = await DB.getTransfers(uid);
 	if (transfers.length === 0) {
 		tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No transfers for this user</td></tr>';
 		return;
@@ -866,7 +864,7 @@ function renderTransfers() {
 			: '<span style="color:#c50000;font-weight:600;">Outgoing</span>';
 		return `
 		<tr>
-			<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
+			<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
 			<td class="td-bold">${t.account || (u ? u.account : '—')}</td>
 			<td>${t.currency}</td>
 			<td>${dirLabel}</td>
@@ -884,24 +882,25 @@ function renderTransfers() {
 	}).join('');
 }
 
-function setTxStatus(id, status, uid) {
-	DB.updateTransfer(id, { status }, uid);
+async function setTxStatus(id, status, uid) {
+	await DB.updateTransfer(id, { status });
 	renderTransfers();
 	renderDashboard();
 	toast('Transfer marked as ' + status + '.');
 }
 
-function deleteTx(id, uid) {
+async function deleteTx(id, uid) {
 	if (!confirm('Delete this transfer record?')) return;
-	DB.deleteTransfer(id, uid);
+	await DB.deleteTransfer(id);
 	renderTransfers();
 	renderDashboard();
 	toast('Transfer deleted.');
 }
 
 /* ---- Edit Transfer Modal ---- */
-function openEditTx(id, uid) {
-	const t = DB.getTransfers(uid).find(x => x.id == id);
+async function openEditTx(id, uid) {
+	const transfers = await DB.getTransfers(uid);
+	const t = transfers.find(x => x.id == id);
 	if (!t) return;
 	document.getElementById('em-tx-id').value    = t.id;
 	document.getElementById('em-tx-uid').value   = uid;
@@ -910,15 +909,12 @@ function openEditTx(id, uid) {
 	document.getElementById('em-amount').value   = t.amount;
 	document.getElementById('em-direction').value = t.direction || 'outgoing';
 	document.getElementById('em-status').value   = t.status;
-	// Format date for input[type=date]
-	const d = new Date(t.createdAt);
-	const ds = d.toISOString().split('T')[0];
-	document.getElementById('em-date').value = ds;
+	const d = new Date(t.created_at);
+	document.getElementById('em-date').value = d.toISOString().split('T')[0];
 	document.getElementById('editTxModal').classList.add('open');
 }
-function saveEditTransfer() {
+async function saveEditTransfer() {
 	const id  = document.getElementById('em-tx-id').value;
-	const uid = document.getElementById('em-tx-uid').value;
 	const dateVal = document.getElementById('em-date').value;
 	const patch = {
 		account:   document.getElementById('em-account').value.trim(),
@@ -927,8 +923,8 @@ function saveEditTransfer() {
 		direction: document.getElementById('em-direction').value,
 		status:    document.getElementById('em-status').value
 	};
-	if (dateVal) patch.createdAt = new Date(dateVal).toISOString();
-	DB.updateTransfer(id, patch, uid);
+	if (dateVal) patch.created_at = new Date(dateVal).toISOString();
+	await DB.updateTransfer(id, patch);
 	closeModal('editTxModal');
 	renderTransfers();
 	renderDashboard();
@@ -936,26 +932,25 @@ function saveEditTransfer() {
 }
 
 /* ---- Add Transfer ---- */
-function adminAddTransfer() {
+async function adminAddTransfer() {
 	const uid = document.getElementById('at-user-select').value;
-	const u   = DB.getUserById(uid);
+	const u   = await DB.getUserById(uid);
 	const amt = parseFloat(document.getElementById('at-amount').value);
 	if (!uid) { toast('Please select a user.', true); return; }
 	if (!amt || amt <= 0) { toast('Enter a valid amount.', true); return; }
 
 	const dateVal = document.getElementById('at-date').value;
 	const entry = {
-		account:  document.getElementById('at-account').value.trim() || (u ? u.account : ''),
-		currency: document.getElementById('at-currency').value,
-		amount:   amt,
-		direction: document.getElementById('at-direction').value,
-		status:   document.getElementById('at-status').value,
-		// store minimal fields matching what user view shows
+		account:      document.getElementById('at-account').value.trim() || (u ? u.account : ''),
+		currency:     document.getElementById('at-currency').value,
+		amount:       amt,
+		direction:    document.getElementById('at-direction').value,
+		status:       document.getElementById('at-status').value,
 		recipientName: document.getElementById('at-account').value.trim() || (u ? u.account : ''),
 	};
-	if (dateVal) entry.createdAt = new Date(dateVal + 'T12:00:00').toISOString();
+	if (dateVal) entry.created_at = new Date(dateVal + 'T12:00:00').toISOString();
 
-	DB.addTransfer(entry, uid);
+	await DB.addTransfer(entry, uid);
 	clearAddTransfer();
 	renderTransfers();
 	renderDashboard();
@@ -975,29 +970,30 @@ function clearAddTransfer() {
 ============================================================ */
 function getSelectedNotifUser() {
 	const sel = document.getElementById('notif-user-select');
-	return sel ? sel.value : (DB.getUser() || {}).id;
+	return sel ? sel.value : null;
 }
 
-function sendNotification() {
+async function sendNotification() {
 	const uid = getSelectedNotifUser();
 	const msg = document.getElementById('notif-message').value.trim();
 	if (!uid) { toast('Please select a user.', true); return; }
 	if (!msg) { toast('Message cannot be empty.', true); return; }
-	DB.addNotification({ message: msg }, uid);
+	await DB.addNotification({ message: msg }, uid);
 	document.getElementById('notif-message').value = '';
 	renderNotifHistory();
 	renderDashboard();
-	const u = DB.getUserById(uid);
+	const u = await DB.getUserById(uid);
 	toast('Notification sent to ' + (u ? u.name : uid) + '.');
 }
 
-function renderNotifHistory() {
+async function renderNotifHistory() {
 	const uid = getSelectedNotifUser();
-	const u = DB.getUserById(uid);
-	const notes = uid ? DB.getNotifications(uid) : [];
 	const tbody = document.getElementById('notif-history-body');
 	const title = document.getElementById('notif-history-title');
 	if (!tbody) return;
+	if (!uid) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Select a user above</td></tr>'; return; }
+	const u = await DB.getUserById(uid);
+	const notes = await DB.getNotifications(uid);
 	if (title && u) title.textContent = 'Notifications — ' + u.name;
 	if (notes.length === 0) {
 		tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No notifications for this user</td></tr>';
@@ -1005,7 +1001,7 @@ function renderNotifHistory() {
 	}
 	tbody.innerHTML = notes.map(n => `
 		<tr>
-			<td class="td-muted">${DB.fmtDate(n.createdAt)}</td>
+			<td class="td-muted">${DB.fmtDate(n.created_at)}</td>
 			<td>${n.message}</td>
 			<td class="text-right">${n.read
 				? '<span style="color:#00a651;font-weight:600;">✓ Read</span>'
@@ -1016,8 +1012,8 @@ function renderNotifHistory() {
 		</tr>`).join('');
 }
 
-function deleteNotif(id, uid) {
-	DB.deleteNotification(id, uid);
+async function deleteNotif(id, uid) {
+	await DB.deleteNotification(id);
 	renderNotifHistory();
 	renderDashboard();
 	toast('Notification deleted.');

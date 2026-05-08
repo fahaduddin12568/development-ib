@@ -507,17 +507,20 @@
 		©2026 Development IB Ltd. &nbsp;&nbsp; <a href="mailto:support@dev-ib-international.com" style="color:#aaa;text-decoration:none;">support@dev-ib-international.com</a>
 	</footer>
 
-	<script src="js/db.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase_db.js"></script>
 	<script>
 	/* ---- Populate header from DB ---- */
-	(function() {
-		const user = DB.getUser();
-		document.getElementById('headerName').textContent = user.name;
-		document.getElementById('headerUid').textContent = 'User ID: ' + user.id;
-		document.getElementById('fromAcctName').textContent = user.account + ' — ' + user.currency + ' Investment Account';
-		document.getElementById('availBal').textContent = DB.fmt(user.balance) + ' ' + user.currency;
-		document.getElementById('balAlertAmt').textContent = DB.fmt(user.balance) + ' ' + user.currency;
-	})();
+	let _user = null;
+	async function loadUser() {
+		_user = await DB.getUser();
+		document.getElementById('headerName').textContent = _user.name;
+		document.getElementById('headerUid').textContent = 'User ID: ' + _user.id;
+		document.getElementById('fromAcctName').textContent = _user.account + ' — ' + _user.currency + ' Investment Account';
+		document.getElementById('availBal').textContent = DB.fmt(_user.balance) + ' ' + _user.currency;
+		document.getElementById('balAlertAmt').textContent = DB.fmt(_user.balance) + ' ' + _user.currency;
+	}
+	loadUser();
 
 	/* ---- Country "Other" field toggle ---- */
 	function handleCountryChange() {
@@ -527,10 +530,10 @@
 
 	/* ---- Balance check ---- */
 	function checkBalance() {
-		const user = DB.getUser();
+		if (!_user) return;
 		const amt = parseFloat(document.getElementById('amount').value);
 		const alert = document.getElementById('balanceAlert');
-		alert.style.display = (!isNaN(amt) && amt > 0 && amt > user.balance) ? 'block' : 'none';
+		alert.style.display = (!isNaN(amt) && amt > 0 && amt > _user.balance) ? 'block' : 'none';
 	}
 
 	/* ---- Validation ---- */
@@ -555,7 +558,7 @@
 	function goToReview() {
 		clearErrors();
 		let ok = true;
-		const user = DB.getUser();
+		const user = _user;
 
 		const name    = document.getElementById('recipientName').value.trim();
 		const iban    = document.getElementById('recipientIBAN').value.trim();
@@ -607,7 +610,7 @@
 	}
 
 	/* ---- Step 2 → Step 3: Save to DB ---- */
-	function confirmTransfer() {
+	async function confirmTransfer() {
 		const name    = document.getElementById('recipientName').value.trim();
 		const iban    = document.getElementById('recipientIBAN').value.trim();
 		const swift   = document.getElementById('recipientSWIFT').value.trim();
@@ -617,12 +620,13 @@
 		const purpose = document.getElementById('purpose').value;
 		const remarks = document.getElementById('remarks').value.trim() || '';
 
-		DB.addTransfer({
+		await DB.addTransfer({
 			recipientName: name,
 			iban, swift, country,
 			amount: amt, currency: ccy,
 			purpose, remarks,
-			status: 'pending'
+			status: 'pending',
+			direction: 'outgoing'
 		});
 
 		document.getElementById('step2').style.display = 'none';
@@ -657,8 +661,8 @@
 	}
 
 	/* ---- Render transfer history ---- */
-	function renderHistory() {
-		const transfers = DB.getTransfers();
+	async function renderHistory() {
+		const transfers = await DB.getTransfers();
 		const tbody = document.getElementById('historyBody');
 		if (transfers.length === 0) {
 			tbody.innerHTML = '<tr><td colspan="6" style="padding:16px 20px;color:#aaa;font-style:italic;">No transfers yet</td></tr>';
@@ -671,10 +675,10 @@
 				? `<span class="badge-failed">Failed</span>`
 				: `<span class="badge-pending">Pending</span>`;
 			return `<tr>
-				<td class="td-muted">${DB.fmtDate(t.createdAt)}</td>
-				<td class="td-bold">${t.recipientName}</td>
-				<td>${t.country}</td>
-				<td>${t.purpose}</td>
+				<td class="td-muted">${DB.fmtDate(t.created_at)}</td>
+				<td class="td-bold">${t.recipientName || t.beneficiary || '—'}</td>
+				<td>${t.country || '—'}</td>
+				<td>${t.purpose || '—'}</td>
 				<td class="text-right td-bold" style="color:#c50000;">-${DB.fmt(t.amount)} ${t.currency}</td>
 				<td class="text-right">${badge}</td>
 			</tr>`;
@@ -683,25 +687,25 @@
 	renderHistory();
 
 	/* ---- Notifications ---- */
-	function renderNotifications() {
-		const notes = DB.getNotifications();
+	async function renderNotifications() {
+		const notes = await DB.getNotifications();
 		const badge = document.getElementById('notifBadge');
 		const ul = document.getElementById('notifList');
-		const unread = DB.unreadCount();
+		const unread = await DB.unreadCount();
 		badge.style.display = unread > 0 ? 'flex' : 'none';
 		badge.textContent = unread;
 		ul.innerHTML = notes.length === 0
 			? '<li class="notif-empty">No notifications</li>'
-			: notes.map(n => `<li class="notif-item ${n.read?'':'notif-unread'}"><div class="notif-msg">${n.message}</div><div class="notif-time">${DB.fmtDate(n.createdAt)}</div></li>`).join('');
+			: notes.map(n => `<li class="notif-item ${n.read?'':'notif-unread'}"><div class="notif-msg">${n.message}</div><div class="notif-time">${DB.fmtDate(n.created_at)}</div></li>`).join('');
 	}
 	renderNotifications();
 
-	document.getElementById("notifBell").onclick = function (e) {
+	document.getElementById("notifBell").onclick = async function (e) {
 		e.stopPropagation();
 		const popup = document.getElementById("notifPopup");
 		const vis = popup.style.display === "block";
 		popup.style.display = vis ? "none" : "block";
-		if (!vis) { DB.markNotificationsRead(); renderNotifications(); }
+		if (!vis) { await DB.markNotificationsRead(); renderNotifications(); }
 	};
 	document.addEventListener('click', function(e) {
 		if (!e.target.closest('.notif-wrap')) document.getElementById("notifPopup").style.display = "none";
@@ -718,8 +722,8 @@
 	}
 
 	// ---- Mobile user info & hamburger ----
-	(function() {
-		const user = DB.getUser();
+	(async function() {
+		const user = await DB.getUser();
 		const mn = document.getElementById('mobileHeaderName');
 		const mu = document.getElementById('mobileHeaderUid');
 		if (mn) mn.textContent = user.name;

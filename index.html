@@ -15,6 +15,10 @@
     <script src="js/jquery-3.3.1.js"></script>
     <script src="js/jquery-migrate-3.0.1.js"></script>
 
+    <!-- DB -->
+    <script src="js/config.js"></script>
+    <script src="js/supabase_db.js"></script>
+
     <!-- Validation -->
     <script src="js/client_validation.js"></script>
 </head>
@@ -78,17 +82,19 @@ function triggerShake() {
     box.classList.add('headShake');
 }
 
-function CheckErr(form) {
+async function CheckErr(form) {
     const userId = form.UID.value.trim();
-    const pin = form.PIN.value.trim();
+    const pin    = form.PIN.value.trim();
+    const err    = document.getElementById("errormsg");
 
-    const correctId = "655016554";
-    const correctPin = "11559900";
+    const loginBtn = document.querySelector('.btn-primary');
+    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Verifying…'; }
 
-    const err = document.getElementById("errormsg");
+    const user = await DB.loginUser(userId, pin);
 
-    // Wrong input → shake + error
-    if (userId !== correctId || pin !== correctPin) {
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Login'; }
+
+    if (!user) {
         err.style.display = 'block';
         form.UID.classList.add('red');
         form.PIN.classList.add('red');
@@ -96,11 +102,9 @@ function CheckErr(form) {
         return;
     }
 
-    // Success → redirect
     err.style.display = 'none';
     form.UID.classList.remove('red');
     form.PIN.classList.remove('red');
-
     window.location.href = 'main.html';
 }
 
